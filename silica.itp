@@ -1,0 +1,34 @@
+; **************** ;
+; Silica substrate ;
+; SiO2 composition ;
+; **************** ;
+
+[ bondtypes ]
+SIP  OS  1  0.151  500000
+
+[ moleculetype ]
+; Original name: SIO
+; Name        nrexcl
+SUB           3
+
+[ atoms ]
+; Original residual name: SIO
+; id  attype resnr  residue atname cgnr   charge      mass
+  1   OS        1     SUB       O1    1  -0.40
+  2   SIP       1     SUB       SI    1   0.80
+  3   OS        1     SUB       O2    1  -0.40
+
+[ bonds ]
+ 1  2   5
+ 2  3   5
+
+[ constraints ]
+ 1  3   2  0.302
+
+[ virtual_sites2 ]
+ 2  1  3  1  0.5
+
+[ position_restraints ]
+  1  1  10000 10000 10000
+;  2  1  10000 10000 10000
+  3  1  10000 10000 10000

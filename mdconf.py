@@ -2,6 +2,10 @@ from math import sqrt
 from math import sin
 from math import cos
 
+"""
+    Library for creating and manipulating MD configurations (reference: GROMACS)
+    MAKE THIS MORE OBJECT-ORIENTED!
+"""
 
 """
     FUNCTION lj_substrate
@@ -328,3 +332,48 @@ def merge_to_substrate(
     sys.close()
     liq.close()
     sub.close()
+
+
+"""
+    FUNCTION add_atoms_topology
+    [...]
+"""
+def add_atoms_topology(
+    system_file = "system.pdb",
+    topology_file = "system.top"
+    ):
+
+    sys = open(system_file, 'r')
+
+    residues_number = dict()
+    types_per_residual = dict()
+
+    for line in sys :
+        cols = line.split()
+        if cols[0] == "CRYST1" :
+            break
+
+    for line in sys :
+        cols = line.split()
+        residue_name = cols[3]
+        if residue_name in residues_number :
+            residues_number[residue_name] += 1
+        else :
+            residues_number[residue_name] = 1
+        atom_name = cols[2]
+        if residue_name in types_per_residual :
+            types_per_residual[residue_name].add(atom_name)
+        else :
+            types_per_residual[residue_name] = {atom_name}
+
+    sys.close()
+
+    top = open(topology_file, 'a+')
+
+    top.write("[ molecules ]\n")
+
+    for residue_name in residues_number :
+        n_mol = residues_number[residue_name]/len(types_per_residual[residue_name])
+        top.write(residue_name+' '+str(int(n_mol))+"\n")
+
+    top.close()

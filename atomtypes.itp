@@ -1,0 +1,5 @@
+; name  at.num   mass     charge  ptype    sigma       epsilon
+; Silicon atom for the substrate
+SIP      14       0.0       0         V    0.45         0.2
+; Oxygen atom for the substrate
+OS	      8      9.95140    0         A    3.16557e-01  6.50194e-01

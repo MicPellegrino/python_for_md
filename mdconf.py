@@ -2,6 +2,8 @@ from math import sqrt
 from math import sin
 from math import cos
 
+import numpy as np
+
 """
     Library for creating and manipulating MD configurations (reference: GROMACS)
     MAKE THIS MORE OBJECT-ORIENTED!
@@ -377,3 +379,72 @@ def add_atoms_topology(
         top.write(residue_name+' '+str(int(n_mol))+"\n")
 
     top.close()
+
+
+"""
+    DICTIONARY unit_cell_type
+    [...]
+"""
+unit_cell_type = dict()
+unit_cell_type['cube'] = np.array([ [0.0, 0.0, 0.0] ], dtype=np.float64)
+unit_cell_type['bcc'] = np.array([ [0.0, 0.0, 0.0], [0.5, 0.5, 0.5] ], dtype=np.float64)
+unit_cell_type['fcc'] = np.array([ [0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [0.0, 0.5, 0.5], [0.5, 0.0, 0.5] ], dtype=np.float64)
+
+
+"""
+    CLASS monatomic_crystal_substrate
+    [...]
+"""
+class monatomic_crystal_substrate :
+
+    def __init__ ( self, ncx, ncy, ncz, sp, ct='cube' ) :
+        self.n_cells_x = ncx
+        self.n_cells_y = ncy
+        self.n_cells_z = ncz
+        self.spacing = sp
+        self.crystal_type = ct
+        self.local_coordinates = unit_cell_type[ct]
+        self.n_atoms_per_cell = (self.local_coordinates.size)//3
+        self.n_atoms = self.n_atoms_per_cell*ncx*ncy*ncz
+        self.x_coord = np.zeros( self.n_atoms )
+        self.y_coord = np.zeros( self.n_atoms )
+        self.z_coord = np.zeros( self.n_atoms )
+        self.init_coordinates()
+
+    def init_coordinates( self ) :
+        print("Initializing "+self.crystal_type+" crystal coordinates ...")
+        n = 0
+        for i in range(self.n_cells_x) :
+            for j in range(self.n_cells_y) :
+                for k in range(self.n_cells_z) :
+                    for l in range(self.n_atoms_per_cell) :
+                        self.x_coord[n] = self.spacing * ( self.local_coordinates[l][0] + i )
+                        self.y_coord[n] = self.spacing * ( self.local_coordinates[l][1] + j )
+                        self.z_coord[n] = self.spacing * ( self.local_coordinates[l][2] + k )
+                        n += 1
+        print("Crystal initialized!")
+
+    def carve_function ( self, fun ) :
+        x_new = []
+        y_new = []
+        z_new = []
+        for n in range(self.n_atoms) :
+            if self.z_coord[n] < fun(self.x_coord[n]) :
+                x_new.append(self.x_coord[n])
+                y_new.append(self.y_coord[n])
+                z_new.append(self.z_coord[n])
+        self.x_coord = np.array(x_new)
+        self.y_coord = np.array(y_new)
+        self.z_coord = np.array(z_new)
+        self.n_atoms = self.x_coord.size
+
+    def write_to_file( self, file_name ) :
+        fn = open(file_name, 'w')
+        n = 1
+        fn.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
+           (self.x_coord.max(),self.y_coord.max(),self.z_coord.max(),90.0,90.0,90.0) )
+        for n in range(self.n_atoms):
+            a = 'CUS'   # a = 'CUB'
+            fn.write( "%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                ("ATOM",n % 100000,a,"SUB",1,self.x_coord[n],self.y_coord[n],self.z_coord[n]) )
+        fn.close()

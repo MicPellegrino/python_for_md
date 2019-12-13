@@ -139,6 +139,7 @@ def quad_substrate (
 """
 def quad_substrate_wave (
     amplitude,
+    amplitude_offset,
     wave_number,
     wave_offset,
     bend,
@@ -149,7 +150,8 @@ def quad_substrate_wave (
     ):
 
     # Lattice parameters
-    sp = 4.50
+    # sp = 4.50
+    sp = 4.50/sqrt(2)
     alpha_1 = sqrt(3.0/4.0)
     alpha_2 = sqrt(2.0/3.0)
 
@@ -205,7 +207,8 @@ def quad_substrate_wave (
             for j in range(nj) :
                 y = y0 + j*dy + k*dy_z
                 x = x0 + i*dx + j*dx_y + k*dx_z
-                z_pert = z + amplitude*sin( wave_number*x + wave_offset )
+                z_pert = z + amplitude*sin( wave_number*x + wave_offset ) + amplitude_offset
+                assert z_pert>=0, "Negative height"
                 quad_wave_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
                     ("ATOM", n % 100000, ao1, "SUB", 1, x+dx_so(), y, z_pert+dz_so()) )
                 quad_wave_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %

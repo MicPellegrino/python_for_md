@@ -45,7 +45,7 @@ print("diffusive t.s. [s] = %E" % tau_D)
 # Ratio between total simulation time and viscous time
 M_tau = 10
 # Ratio between viscous time and time step
-alpha_tau = 1e5
+alpha_tau = 1e6
 
 # Times [PICOSECONDS]
 # t_tem = -1 : no temperature coupling
@@ -54,7 +54,7 @@ t_max = 1e12*M_tau*tau_mu
 dt = 1e12*tau_mu/alpha_tau
 nsteps = M_tau*alpha_tau
 t_tem = 0.1
-t_prs = 1.0
+t_prs = -1.0
 
 ###############################################################################
 print("MD TIME PARAMETERS (|!| picoseconds |!|)")
@@ -130,7 +130,8 @@ print("coupled groups: "+tc_grps)
 ###############################################################################
 
 # Barostat
-pcoupl = "berendsen"        # see GROMACS documentation
+# pcoupl = "berendsen"      # see GROMACS documentation
+pcoupl = "no"             # see GROMACS documentation
 pcoupltype = "isotropic"    # see GROMACS documentation
 compressibility = 5e-5      # compressibility [bar^-1]
 refcoord_scaling = "all"    # see GROMACS documentation

@@ -62,6 +62,38 @@ def lj_substrate (
 
     lj_file.close()
 
+"""
+    FUNCTION check_pdb_consistency
+    [...]
+"""
+def check_pdb_consistency (
+    file_name ) :
+
+    pdb_file = open(file_name, 'r')
+
+    max_x = 0.0
+    max_y = 0.0
+    max_z = 0.0
+
+    with pdb_file as f :
+        for line in f :
+            cols = line.split()
+            if cols[0] == "CRYST1":
+                max_x = float(cols[1])
+                max_y = float(cols[2])
+                max_z = float(cols[3])
+                break
+        for line in f :
+            cols = line.split()
+            if cols[0] == "ATOM" :
+                assert( ( float(cols[5]) >= 0.0 and float(cols[5]) < max_x ), "Atom "+str(cols[1])+" outside box (x dir.)")
+                assert( ( float(cols[6]) >= 0.0 and float(cols[6]) < max_y ), "Atom "+str(cols[1])+" outside box (y dir.)")
+                assert( ( float(cols[7]) >= 0.0 and float(cols[7]) < max_z ), "Atom "+str(cols[1])+" outside box (z dir.)")
+
+    print("Everything's fine!")
+
+    pdb_file.close()
+
 
 """
     FUNCTION quad_substrate
@@ -247,6 +279,13 @@ def carve_2D_droplet(
     liquid_file = open(input_file_name, 'r')
     droplet_file = open(output_file_name, 'w+')
 
+    line_mol = []
+    for k in range(n_atom_mol) :
+        line_mol.append("")
+
+    # Dummy
+    n_count = 0
+
     with liquid_file as f :
         for line in f :
             cols = line.split()
@@ -260,14 +299,27 @@ def carve_2D_droplet(
         for line in f :
             cols = line.split()
             if cols[0] == "ATOM" :
-                n_count = ( n_count + 1 ) % n_atom_mol
-                if n_count == 1 :
-                    x = float(cols[5])
-                    z = float(cols[7])
+                # PREVIOUS IMPLEMENTATION
+                # n_count = ( n_count + 1 ) % n_atom_mol
+                # if n_count == 1 :
+                #     x = float(cols[5])
+                #     z = float(cols[7])
+                #     r2 = (x-cx)**2 + (z-cz)**2
+                # if r2 < cut2 :
+                #     droplet_file.write(line)
+                #     n = n + 1
+                x = float(cols[5])
+                z = float(cols[7])
+                line_mol[n_count] = line
+                if n_count == 0 :
                     r2 = (x-cx)**2 + (z-cz)**2
-                if r2 < cut2 :
-                    droplet_file.write(line)
-                    n = n + 1
+                else :
+                    r2 = max(r2, (x-cx)**2 + (z-cz)**2)
+                if n_count == (n_atom_mol-1) and r2 < cut2 :
+                    for k in range(n_atom_mol) :
+                        droplet_file.write(line_mol[k])
+                        n = n + 1
+                n_count = ( n_count + 1 ) % n_atom_mol
         print("n atoms = %d" % n)
 
     droplet_file.close()
@@ -324,15 +376,27 @@ def merge_to_substrate(
     n_atom_mol = 3
     n_count = 0
 
+    lines = ["", "", ""]
     for line in liq :
         cols = line.split()
         if cols[0] == "ATOM" :
-            n_count = ( n_count + 1 ) % n_atom_mol
-            if n_count == 1 :
-                y = float(cols[6])
+            # n_count = ( n_count + 1 ) % n_atom_mol
+            # if n_count == 1 :
+            #     y = float(cols[6])
+            #     not_carve = y <= sub_max_y
+            # if not_carve :
+            #     sys.write(line)
+            lines[n_count] = line
+            y = float(cols[6])
+            if n_count == 0 :
                 not_carve = y <= sub_max_y
-            if not_carve :
-                sys.write(line)
+            else :
+                not_carve = not_carve*(y <= sub_max_y)
+            if n_count == 2 and not_carve :
+                sys.write(lines[0])
+                sys.write(lines[1])
+                sys.write(lines[2])
+            n_count = ( n_count + 1 ) % n_atom_mol
 
     sys.close()
     liq.close()
@@ -360,6 +424,8 @@ def add_atoms_topology(
 
     for line in sys :
         cols = line.split()
+        if cols[0] == 'TER' :
+            break
         residue_name = cols[3]
         if residue_name in residues_number :
             residues_number[residue_name] += 1

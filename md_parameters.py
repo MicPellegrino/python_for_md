@@ -51,9 +51,12 @@ alpha_tau = 1e6
 # t_tem = -1 : no temperature coupling
 t_ini = 0.0
 t_max = 1e12*M_tau*tau_mu
+# NB: the time step should be small enough to capture hydrogen atoms vibrations;
+#       typical values are on the order of 5fs
 dt = 1e12*tau_mu/alpha_tau
 nsteps = M_tau*alpha_tau
 t_tem = 0.1
+# t_prs = 0.1
 t_prs = -1.0
 
 ###############################################################################
@@ -79,6 +82,28 @@ print("sampling window [ps] = %f" % t_sample)
 print("sample size = %d" % nsample)
 ###############################################################################
 
+# Boundary conditions
+
+pbc = "xy"                      # xyz = p.b.c. on all edge
+                                # no = use no p.b.c; see GROMACS documentation
+                                # xy = use p.b.c. in x and y directions only; see GROMACS documentation
+nwall = 2                       # 1 = wall at z=0; 2 = walls at z=0 and z=box_height
+wall_type = "12-6"              # type of VdW interaction; see GROMACS documentation
+wall_atomtype = "opls_740"      # need to be defined in a separate .itp file
+wall_r_linpot = 0.0             # distance below which the wall potential is continued
+
+if nwall > 0 :
+    assert(pbc == "xy", "Walls are allowed if p.b.c. are set on x and y only")
+
+###############################################################################
+print("BOUNDARY CONDITIONS (|!| nanometers |!|)")
+print("periodic boundary conditions: "+pbc)
+print("number of walls = %d" % nwall)
+print("type of wall: "+wall_type)
+print("type of wall atoms: "+wall_atomtype)
+print("below-wall potential distance [nm] = %f" % wall_r_linpot)
+###############################################################################
+
 # Neighbour searching
 nstlist = 10                # frequency to update the neighbor list
 ns_type = "grid"            # grid = make a grid in the box and only check atoms in neighboring grid cells when constructing a new neighbor list every nstlist steps
@@ -87,8 +112,11 @@ rlist = 1.0                 # cut-off distance for the short-range neighbor list
 cutoff_scheme = "verlet"    # verlet = generate a pair list with buffering
                             # group = generate a pair list for groups of atoms
 
+if pbc == "xy" :
+    assert(ns_type == "grid", "Only neighbours search of type grid allowed with xy p.b.c.")
+
 ###############################################################################
-print("NEIGHBOUR SEARCH (|!| nanometers |!|)")
+print("NEIGHBOUR SEARCH")
 print("search type: "+ns_type)
 print("cutoff scheme: "+cutoff_scheme)
 print("update frequency = %d" % nstlist)
@@ -100,6 +128,7 @@ coulombtype = "pme"         # see GROMACS documentation
 fourierspacing = 0.15       # spacing in FFT grid [nm]
 pme_order = 6               # interpolation order for PME (4 equals cubic interpolation)
 ewald_rtol = 1e-5           # relative strength of the Ewald-shifted direct potential at rcoulomb (?)
+ewald_geometry = "3dc"      # see documentations
 rcoulomb = 1.0              # distance for the Coulomb cut-off [nm]
 vdw_type = "Cut-off"        # see GROMACS documentation
 rvdw = 1.0                  # distance for the LJ or Buckingham cut-off [nm]
@@ -113,6 +142,7 @@ print("coulomb force computation: "+coulombtype)
 print("spacing for fft [nm] = %f" % fourierspacing )
 print("interpolation order for PME = %d" % pme_order)
 print("pme relatiove strenght = %E" % ewald_rtol)
+print("pme geometry: "+ewald_geometry)
 print("cutoff distance coulomb [nm] = %f" % rcoulomb)
 print("vdw force computation: "+vdw_type)
 print("cutoff distnce vdw [nm] = %f" % rvdw)
@@ -165,7 +195,7 @@ print("random seed = %d" % gen_seed)
 
 # GENERATE .mdp FILE
 
-file_name = "system.mdp"
+file_name = "mdpar.mdp"
 
 ###############################################################################
 print("MD FILE NAME: "+file_name)
@@ -183,6 +213,15 @@ md_param.write("nstvout\t\t\t = %d\n" % nstvout)
 md_param.write("nstlog\t\t\t = %d\n" % nstlog)
 md_param.write("nstenergy\t\t = %d\n" % nstenergy)
 
+md_param.write("pbc\t\t\t = "+pbc+"\n")
+md_param.write("nwall\t\t\t = %d \n" % nwall)
+md_param.write("wall-type\t\t = "+wall_type+" \n")
+if nwall == 1 :
+    md_param.write("wall-atomtype\t\t = "+wall_atomtype+" \n")
+elif nwall == 2 :
+    md_param.write("wall-atomtype\t\t = "+wall_atomtype+" "+wall_atomtype+" \n")
+md_param.write("wall-r-linpot\t\t = %f\n" % wall_r_linpot)
+
 md_param.write("nstlist\t\t\t = %d\n" % nstlist)
 md_param.write("ns-type\t\t\t = "+ns_type+"\n")
 md_param.write("rlist\t\t\t = %f\n" % rlist)
@@ -193,6 +232,7 @@ md_param.write("fourierspacing\t\t = %f\n" % fourierspacing)
 md_param.write("pme-order\t\t = %d\n" % pme_order)
 md_param.write("ewald-rtol\t\t = %e\n" % ewald_rtol)
 md_param.write("rcoulomb\t\t = %f\n" % rcoulomb)
+md_param.write("ewald-geometry\t\t = "+ewald_geometry+"\n")
 
 md_param.write("vdw-type\t\t = "+vdw_type+"\n")
 md_param.write("rvdw\t\t\t = %f\n" % rvdw)

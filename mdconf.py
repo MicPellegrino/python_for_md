@@ -4,10 +4,12 @@ from math import cos
 
 import numpy as np
 
+
 """
     Library for creating and manipulating MD configurations (reference: GROMACS)
     MAKE THIS MORE OBJECT-ORIENTED!
 """
+
 
 """
     FUNCTION lj_substrate
@@ -61,6 +63,7 @@ def lj_substrate (
                 n = n+1
 
     lj_file.close()
+
 
 """
     FUNCTION check_pdb_consistency
@@ -404,10 +407,60 @@ def merge_to_substrate(
 
 
 """
+    FUNCTION shift_droplet
+    [...]
+"""
+def shift_droplet (
+    shift,
+    direction,
+    droplet_file_in,
+    droplet_file_out = 'shifted_droplet.pdb'
+    ) :
+
+    assert(direction == 'x' or direction == 'y' or direction == 'z', "Invalid direction")
+
+    fdi = open(droplet_file_in, 'r')
+    fdo = open(droplet_file_out, 'w')
+
+    if direction == 'x' :
+        for line in fdi :
+            cols = line.split()
+            if cols[0] != 'ATOM' or cols[3] != 'SOL' :
+                fdo.write(line)
+            else :
+                fdo.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    (cols[0], int(cols[1]), cols[2], cols[3], int(cols[4]),
+                        float(cols[5])+shift, float(cols[6]), float(cols[7])) )
+
+    elif direction == 'y' :
+        for line in fdi :
+            cols = line.split()
+            if cols[0] != 'ATOM' or cols[3] != 'SOL' :
+                fdo.write(line)
+            else :
+                fdo.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    (cols[0], int(cols[1]), cols[2], cols[3], int(cols[4]),
+                        float(cols[5]), float(cols[6])+shift, float(cols[7])) )
+
+    elif direction == 'z' :
+        for line in fdi :
+            cols = line.split()
+            if cols[0] != 'ATOM' or cols[3] != 'SOL' :
+                fdo.write(line)
+            else :
+                fdo.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    (cols[0], int(cols[1]), cols[2], cols[3], int(cols[4]),
+                        float(cols[5]), float(cols[6]), float(cols[7])+shift) )
+
+    fdo.close()
+    fdi.close()
+
+
+"""
     FUNCTION add_atoms_topology
     [...]
 """
-def add_atoms_topology(
+def add_atoms_topology (
     system_file = "system.pdb",
     topology_file = "system.top"
     ):

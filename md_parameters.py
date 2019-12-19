@@ -43,7 +43,7 @@ print("diffusive t.s. [s] = %E" % tau_D)
 ###############################################################################
 
 # Ratio between total simulation time and viscous time
-M_tau = 10
+M_tau = 20
 # Ratio between viscous time and time step
 alpha_tau = 1e6
 
@@ -52,8 +52,10 @@ alpha_tau = 1e6
 t_ini = 0.0
 t_max = 1e12*M_tau*tau_mu
 # NB: the time step should be small enough to capture hydrogen atoms vibrations;
-#       typical values are on the order of 5fs
-dt = 1e12*tau_mu/alpha_tau
+#       typical values are on the order of 5fs; for water simulation better to stay
+#       around 4fs or below
+# dt = 1e12*tau_mu/alpha_tau
+dt = 0.004
 nsteps = M_tau*alpha_tau
 t_tem = 0.1
 # t_prs = 0.1
@@ -84,10 +86,10 @@ print("sample size = %d" % nsample)
 
 # Boundary conditions
 
-pbc = "xy"                      # xyz = p.b.c. on all edge
+pbc = "xyz"                     # xyz = p.b.c. on all edge
                                 # no = use no p.b.c; see GROMACS documentation
                                 # xy = use p.b.c. in x and y directions only; see GROMACS documentation
-nwall = 2                       # 1 = wall at z=0; 2 = walls at z=0 and z=box_height
+nwall = 0                       # 1 = wall at z=0; 2 = walls at z=0 and z=box_height
 wall_type = "12-6"              # type of VdW interaction; see GROMACS documentation
 wall_atomtype = "opls_740"      # need to be defined in a separate .itp file
 wall_r_linpot = 0.0             # distance below which the wall potential is continued
@@ -128,7 +130,8 @@ coulombtype = "pme"         # see GROMACS documentation
 fourierspacing = 0.15       # spacing in FFT grid [nm]
 pme_order = 6               # interpolation order for PME (4 equals cubic interpolation)
 ewald_rtol = 1e-5           # relative strength of the Ewald-shifted direct potential at rcoulomb (?)
-ewald_geometry = "3dc"      # see documentations
+# ewald_geometry = "3dc"    # see documentations
+ewald_geometry = "3d"
 rcoulomb = 1.0              # distance for the Coulomb cut-off [nm]
 vdw_type = "Cut-off"        # see GROMACS documentation
 rvdw = 1.0                  # distance for the LJ or Buckingham cut-off [nm]

@@ -127,8 +127,8 @@ print("cutoff distance [nm] = %f" % rlist)
 
 # Electrostatics and other non-bonded interactions
 coulombtype = "pme"         # see GROMACS documentation
-fourierspacing = 0.15       # spacing in FFT grid [nm]
-pme_order = 6               # interpolation order for PME (4 equals cubic interpolation)
+fourierspacing = 0.125      # spacing in FFT grid [nm]
+pme_order = 4               # interpolation order for PME (4 equals cubic interpolation)
 ewald_rtol = 1e-5           # relative strength of the Ewald-shifted direct potential at rcoulomb (?)
 # ewald_geometry = "3dc"    # see documentations
 ewald_geometry = "3d"
@@ -250,7 +250,7 @@ md_param.write("pcoupl\t\t\t = "+pcoupl+"\n")
 md_param.write("pcoupltype\t\t = "+pcoupltype+"\n")
 md_param.write("tau-p\t\t\t = %f\n" % t_prs )
 md_param.write("compressibility\t\t = %e\n" % compressibility)
-md_param.write("ref-p\t\t\t = %f\n" % p_ref)
+md_param.write("ref-p\t\t\t = %f\n" % p_ref/1e5)
 md_param.write("refcoord-scaling\t = "+refcoord_scaling+"\n")
 
 md_param.write("constraints\t\t = "+constraints+"\n")

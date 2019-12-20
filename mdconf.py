@@ -3,7 +3,7 @@ from math import sin
 from math import cos
 
 import numpy as np
-
+import struct
 
 """
     Library for creating and manipulating MD configurations (reference: GROMACS)
@@ -89,9 +89,9 @@ def check_pdb_consistency (
         for line in f :
             cols = line.split()
             if cols[0] == "ATOM" :
-                assert( ( float(cols[5]) >= 0.0 and float(cols[5]) < max_x ), "Atom "+str(cols[1])+" outside box (x dir.)")
-                assert( ( float(cols[6]) >= 0.0 and float(cols[6]) < max_y ), "Atom "+str(cols[1])+" outside box (y dir.)")
-                assert( ( float(cols[7]) >= 0.0 and float(cols[7]) < max_z ), "Atom "+str(cols[1])+" outside box (z dir.)")
+                assert ( float(cols[5]) >= 0.0 and float(cols[5]) < max_x ), "Atom "+str(cols[1])+" outside box (x dir.)"
+                assert ( float(cols[6]) >= 0.0 and float(cols[6]) < max_y ), "Atom "+str(cols[1])+" outside box (y dir.)"
+                assert ( float(cols[7]) >= 0.0 and float(cols[7]) < max_z ), "Atom "+str(cols[1])+" outside box (z dir.)"
 
     print("Everything's fine!")
 
@@ -417,7 +417,7 @@ def shift_droplet (
     droplet_file_out = 'shifted_droplet.pdb'
     ) :
 
-    assert(direction == 'x' or direction == 'y' or direction == 'z', "Invalid direction")
+    assert direction == 'x' or direction == 'y' or direction == 'z', "Invalid direction"
 
     fdi = open(droplet_file_in, 'r')
     fdo = open(droplet_file_out, 'w')
@@ -501,6 +501,83 @@ def add_atoms_topology (
         top.write(residue_name+' '+str(int(n_mol))+"\n")
 
     top.close()
+
+
+"""
+    FUNCTION add_velocity_gro
+    [...]
+"""
+def add_velocity_gro (
+    direction,
+    vel_value,
+    input_file,
+    output_file = 'system_vel.gro',
+    ) :
+
+    assert direction == 'x' or direction == 'y' or direction == 'z', "Unexpected direction value"
+
+    file_ext = input_file.split('.')[-1]
+
+    assert file_ext == 'gro', "Unexpected file extension"
+
+    dir_vec = [0, 0, 0]
+    if direction == 'x':
+        dir_vec[0] = 1
+    elif direction == 'y':
+        dir_vec[1] = 1
+    elif direction == 'z':
+        dir_vec[2] = 1
+
+    f_in = open(input_file, 'r')
+    f_out = open(output_file, 'w')
+
+    # C format: "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f"
+    line_data = [None]*10
+
+    idx = 0
+    for line in f_in :
+        idx += 1
+        cols = line.split()
+        if idx > 2 and len(cols) != 3 :
+            line_data[0] = int(line[0:5])
+            line_data[1] = str(line[5:10])
+            line_data[2] = str(line[10:15])
+            line_data[3] = int(line[15:20])
+            line_data[4] = float(line[20:28])
+            line_data[5] = float(line[28:36])
+            line_data[6] = float(line[36:44])
+            line_data[7] = line[44:52]
+            if line_data[7] == '' or line_data[7] == '\n' :
+                line_data[7] = 0.0
+            else :
+                line_data[7] = float(line_data[7])
+            line_data[8] = line[52:60]
+            if line_data[8] == '' or line_data[8] == '\n' :
+                line_data[8] = 0.0
+            else :
+                line_data[8] = float(line_data[8])
+            line_data[9] = line[60:68]
+            if line_data[9] == '' or line_data[9] == '\n' :
+                line_data[9] = 0.0
+            else :
+                line_data[9] = float(line_data[9])
+            if line_data[1] == 'SOL  ' :
+                f_out.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                    ( line_data[0], line_data[1], line_data[2], line_data[3],
+                        line_data[4], line_data[5], line_data[6],
+                        line_data[7]+vel_value*dir_vec[0],
+                        line_data[8]+vel_value*dir_vec[1],
+                        line_data[9]+vel_value*dir_vec[2] ) )
+            else :
+                f_out.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                    ( line_data[0], line_data[1], line_data[2], line_data[3],
+                        line_data[4], line_data[5], line_data[6],
+                        line_data[7], line_data[8], line_data[9] ) )
+        else :
+            f_out.write(line)
+
+    f_out.close()
+    f_in.close()
 
 
 """

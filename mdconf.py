@@ -3,21 +3,22 @@ from math import sin
 from math import cos
 
 import numpy as np
-import struct
+# import struct
 
 """
     Library for creating and manipulating MD configurations (reference: GROMACS)
-    MAKE THIS MORE OBJECT-ORIENTED!
+    (1) MAKE THIS MORE OBJECT-ORIENTED!
+    (2) USE .gro EXTENSION, INSTEAD OF .pdb!
 """
 
 
 """
     FUNCTION lj_substrate
     Generates a Lennard-Jones substrate; the arguments refer to the number of
-    atoms in each direction, the spacing, the angles (?) between directions of
+    atoms in each direction, the spacing, the angles between directions of
     the crystal structure and the output file name.
     THIS FUNCTION IS NOT COMPLETE! Need implementation for a generic kind of
-    crystalline structure; at the present moment FCC (?) is default.
+    crystalline structure; at the present moment FCC is default.
 """
 def lj_substrate (
     ni = 10,
@@ -67,7 +68,7 @@ def lj_substrate (
 
 """
     FUNCTION check_pdb_consistency
-    [...]
+    Checks if all atoms in the given .pdb file are within the box boundaries
 """
 def check_pdb_consistency (
     file_name ) :
@@ -100,8 +101,7 @@ def check_pdb_consistency (
 
 """
     FUNCTION quad_substrate
-    Generates a SiO2 substrate
-    [...]
+    Generates a flat SiO2 substrate
 """
 def quad_substrate (
     ni = 10,
@@ -170,7 +170,6 @@ def quad_substrate (
 """
     FUNCTION quad_substrate_wave
     Generates a sinusoidal-shaped SiO2 substrate
-    [...]
 """
 def quad_substrate_wave (
     amplitude,
@@ -331,7 +330,9 @@ def carve_2D_droplet(
 
 """
     FUNCTION adapt_to_2D_subtrate
-    [...]
+    Adapt a 2D cylindrical droplet on a given substrate
+    NB! This will only work if the droplet y dimension is larger than the one of
+    the substrate (i.e. be conservative when shaping the extended water box)
 """
 def merge_to_substrate(
     substrate_file,
@@ -408,7 +409,7 @@ def merge_to_substrate(
 
 """
     FUNCTION shift_droplet
-    [...]
+    Shift the given droplet in the prescribed direction, by the prescibed value
 """
 def shift_droplet (
     shift,
@@ -458,7 +459,8 @@ def shift_droplet (
 
 """
     FUNCTION add_atoms_topology
-    [...]
+    Add number of residues from the prescribed .pdb file to the prescribed
+    topology file
 """
 def add_atoms_topology (
     system_file = "system.pdb",
@@ -505,7 +507,8 @@ def add_atoms_topology (
 
 """
     FUNCTION add_velocity_gro
-    [...]
+    Adds a velocity value in a given component to all atoms of residue SOL; it
+    works with .gro files
 """
 def add_velocity_gro (
     direction,
@@ -582,7 +585,8 @@ def add_velocity_gro (
 
 """
     DICTIONARY unit_cell_type
-    [...]
+    Defines the vectors for atoms positions inside the unit cell
+    IMPLEMENT DIAMOND LATTICE!
 """
 unit_cell_type = dict()
 unit_cell_type['cube'] = np.array([ [0.0, 0.0, 0.0] ], dtype=np.float64)
@@ -592,7 +596,8 @@ unit_cell_type['fcc'] = np.array([ [0.0, 0.0, 0.0], [0.5, 0.5, 0.0], [0.0, 0.5, 
 
 """
     CLASS monatomic_crystal_substrate
-    [...]
+    Slab of 'Lennard-Johnsium'
+    EXTEND TO QUADRUPOLES!
 """
 class monatomic_crystal_substrate :
 

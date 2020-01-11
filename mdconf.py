@@ -329,12 +329,12 @@ def carve_2D_droplet(
 
 
 """
-    FUNCTION adapt_to_2D_subtrate
+    FUNCTION merge_to_substrate
     Adapt a 2D cylindrical droplet on a given substrate
     NB! This will only work if the droplet y dimension is larger than the one of
     the substrate (i.e. be conservative when shaping the extended water box)
 """
-def merge_to_substrate(
+def merge_to_substrate (
     substrate_file,
     liquid_file,
     system_file = 'system.pdb'
@@ -408,6 +408,97 @@ def merge_to_substrate(
 
 
 """
+    FUNCTION merge_to_substrate_gro
+    [...]
+"""
+def merge_to_substrate_gro (
+    substrate_file,
+    liquid_file,
+    system_file = 'system.gro'
+    ):
+
+    sub = open(substrate_file, 'r')
+    liq = open(liquid_file, 'r')
+
+    # Count lines in input files
+    n_lines_sub = 0
+    for line in sub :
+        n_lines_sub += 1
+    n_lines_liq = 0
+    for line in liq :
+        n_lines_liq += 1
+
+    liq.close()
+    sub.close()
+
+    sub = open(substrate_file, 'r')
+    liq = open(liquid_file, 'r')
+    sys = open(system_file, 'w+')
+
+    header = "Merged system\n"
+    sys.write(header)
+    sys.write("            \n")
+
+    n_atoms = 0
+
+    sub_max_x = 0
+    sub_max_y = 0
+
+    idx = 0
+    for line in sub :
+        idx += 1
+        if idx > 2 and idx < n_lines_sub :
+            sys.write(line)
+            n_atoms += 1
+        elif idx == n_lines_sub:
+            sub_max_x = float(line.split()[0])
+            sub_max_y = float(line.split()[1])
+
+    # C format: "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f"
+    line_data = [None]*10
+
+    liq_max_z = 0
+
+    n_atom_mol = 3
+    n_count = 0
+
+    idx = 0
+    lines = ["", "", ""]
+    for line in liq :
+        idx += 1
+        cols = line.split()
+        if idx > 2 and idx < n_lines_liq :
+            lines[n_count] = line
+            y = float(line[28:36])
+            if n_count == 0 :
+                not_carve = y <= sub_max_y
+            else :
+                not_carve = not_carve*(y <= sub_max_y)
+            if n_count == 2 and not_carve :
+                sys.write(lines[0])
+                sys.write(lines[1])
+                sys.write(lines[2])
+                n_atoms += 3
+            n_count = ( n_count + 1 ) % n_atom_mol
+        elif idx == n_lines_liq :
+            liq_max_z = float(line.split()[2])
+
+    # C format: "%10.5f%10.5f%10.5f%10.5f%10.5f%10.5f%10.5f%10.5f%10.5f"
+
+    sys.write("%10.5f%10.5f%10.5f\n" % ( sub_max_x, sub_max_y, liq_max_z ) )
+
+    sys.close()
+    liq.close()
+    sub.close()
+
+    # Add number of atoms
+    print("Number of atoms = %d" % (n_atoms))
+    sys = open(system_file, 'r+')
+    sys.write(header)
+    sys.write(str(n_atoms))
+    sys.close()
+
+"""
     FUNCTION shift_droplet
     Shift the given droplet in the prescribed direction, by the prescibed value
 """
@@ -452,6 +543,75 @@ def shift_droplet (
                 fdo.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
                     (cols[0], int(cols[1]), cols[2], cols[3], int(cols[4]),
                         float(cols[5]), float(cols[6]), float(cols[7])+shift) )
+
+    fdo.close()
+    fdi.close()
+
+
+"""
+    FUNCTION shift_droplet_gro
+    Shift the given droplet in the prescribed direction, by the prescibed value.
+    Ths one works with .gro files.
+"""
+def shift_droplet_gro (
+    shift,
+    direction,
+    droplet_file_in,
+    droplet_file_out = 'shifted_droplet.gro'
+    ) :
+
+    assert direction == 'x' or direction == 'y' or direction == 'z', "Invalid direction"
+
+    # Count lines
+    n_lines = 0
+    fdi = open(droplet_file_in, 'r')
+    for line in fdi :
+        n_lines += 1
+    fdi.close()
+
+    fdi = open(droplet_file_in, 'r')
+    fdo = open(droplet_file_out, 'w')
+
+    line_data = [None]*10
+
+    idx = 0
+
+    for line in fdi :
+        idx += 1
+        if idx > 2 and idx < n_lines :
+            line_data[0] = int(line[0:5])
+            line_data[1] = str(line[5:10])
+            line_data[2] = str(line[10:15])
+            line_data[3] = int(line[15:20])
+            line_data[4] = float(line[20:28])
+            line_data[5] = float(line[28:36])
+            line_data[6] = float(line[36:44])
+            line_data[7] = line[44:52]
+            if line_data[7] == '' or line_data[7] == '\n' :
+                line_data[7] = 0.0
+            else :
+                line_data[7] = float(line_data[7])
+            line_data[8] = line[52:60]
+            if line_data[8] == '' or line_data[8] == '\n' :
+                line_data[8] = 0.0
+            else :
+                line_data[8] = float(line_data[8])
+            line_data[9] = line[60:68]
+            if line_data[9] == '' or line_data[9] == '\n' :
+                line_data[9] = 0.0
+            else :
+                line_data[9] = float(line_data[9])
+            if line_data[1] == "SUB  " :
+                fdo.write(line)
+            else :
+                fdo.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                    ( line_data[0], line_data[1], line_data[2], line_data[3],
+                        line_data[4]+shift*(direction=='x'),
+                        line_data[5]+shift*(direction=='y'),
+                        line_data[6]+shift*(direction=='z'),
+                        line_data[7], line_data[8], line_data[9] ) )
+        else :
+            fdo.write(line)
 
     fdo.close()
     fdi.close()
@@ -581,6 +741,69 @@ def add_velocity_gro (
 
     f_out.close()
     f_in.close()
+
+
+"""
+    FUNCTION initial_velocity_gro
+    Initialize atoms velocities by writing from a .gro file with velocities
+    already set
+"""
+################################################################################
+################################################################################
+def initial_velocity_gro (
+    input_velocity_file,
+    input_position_file,
+    output_file
+    ) :
+
+    f_in_vel = open(input_velocity_file, 'r')
+    f_in_pos = open(input_position_file, 'r')
+    f_out = open(output_file, 'w')
+
+    line_data = [None]*10
+
+    idx_p = 0
+    for line_pos in f_in_pos :
+        idx_p += 1
+        cols = line_pos.split()
+        # If it is header or box, just write it down
+        if idx_p > 2 and len(cols) != 3 :
+            # If it is substrate, just write it down
+            if str(line_pos[5:10]) == "SUB  " :
+                f_out.write(line_pos)
+            else :
+                idx_v = 0
+                sentry = True
+                while (sentry) :
+                    line_vel = f_in_vel.readline()
+                    idx_v += 1
+                    cols = line_vel.split()
+                    # DEBUG
+                    print(line_pos[0:5])
+                    if idx_v > 2 and len(cols) != 3 and int(line_pos[0:5]) == int(line_vel[0:5]) :
+                        line_data[0] = int(line_pos[0:5])
+                        line_data[1] = str(line_pos[5:10])
+                        line_data[2] = str(line_pos[10:15])
+                        line_data[3] = int(line_pos[15:20])
+                        line_data[4] = float(line_pos[20:28])
+                        line_data[5] = float(line_pos[28:36])
+                        line_data[6] = float(line_pos[36:44])
+                        line_data[7] = float(line_vel[44:52])
+                        line_data[8] = float(line_vel[52:60])
+                        line_data[9] = float(line_vel[60:68])
+                        f_out.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                            ( line_data[0], line_data[1], line_data[2], line_data[3],
+                                line_data[4], line_data[5], line_data[6],
+                                line_data[7], line_data[8], line_data[9] ) )
+                        sentry = False
+        else :
+            f_out.write(line_pos)
+
+    f_out.close()
+    f_in_pos.close()
+    f_in_vel.close()
+################################################################################
+################################################################################
 
 
 """

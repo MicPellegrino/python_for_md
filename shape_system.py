@@ -24,7 +24,7 @@ for idx in range(5) :
     file_substrate = '2dCylDropRoughSubTest3/quad_substrate_wave'+str(idx)+'.pdb'
     # mdc.quad_substrate_wave(h, h_off, w_n, w_off, bend, ni, nj, nk, file_substrate)
 
-# Determine new dimensions and resize wateer box
+# Determine new dimensions and resize water box
 file_water_in = '2dCylDropRoughSubTest3/wat_equil.pdb'
 file_water_out = '2dCylDropRoughSubTest3/wat_equil_ext.pdb'
 qs = open(file_substrate, 'r')

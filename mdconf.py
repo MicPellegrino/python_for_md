@@ -1,9 +1,10 @@
 from math import sqrt
 from math import sin
 from math import cos
+from math import floor
 
 import numpy as np
-# import struct
+import matplotlib.pyplot as plt
 
 """
     Library for creating and manipulating MD configurations (reference: GROMACS)
@@ -11,6 +12,11 @@ import numpy as np
     (2) USE .gro EXTENSION, INSTEAD OF .pdb!
 """
 
+"""
+###############################################################################
+PREPROCESSING AND INITIAL CONFIGURATION
+###############################################################################
+"""
 
 """
     FUNCTION lj_substrate
@@ -139,8 +145,11 @@ def quad_substrate (
 
     quad_file = open(file_name, 'w')
 
+    box_x = ni*dx
+    box_y = nj*dy
+    box_z = nk*dz+z0
     quad_file.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
-       (ni*dx,nj*dy,nk*dz,90.0,90.0,90.0) );
+       (box_x,box_y,box_z,90.0,90.0,90.0) )
 
     n = 1
     # Loop over all layers
@@ -157,11 +166,11 @@ def quad_substrate (
                 y = y0 + j*dy + k*dy_z
                 x = x0 + i*dx + j*dx_y + k*dx_z
                 quad_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
-                    ("ATOM", n % 100000, ao1, "SUB", 1, x, y, z+d_so) )
+                    ("ATOM", n % 100000, ao1, "SUB", 1, x-box_x*floor(x/box_x), y, z+d_so) )
                 quad_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
-                    ("ATOM", n % 100000, asl, "SUB", 1, x, y, z) )
+                    ("ATOM", n % 100000, asl, "SUB", 1, x-box_x*floor(x/box_x), y, z) )
                 quad_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
-                    ("ATOM", n % 100000, ao2, "SUB", 1, x, y, z-d_so) )
+                    ("ATOM", n % 100000, ao2, "SUB", 1, x-box_x*floor(x/box_x), y, z-d_so) )
                 n = n+1
 
     quad_file.close()
@@ -224,8 +233,11 @@ def quad_substrate_wave (
 
     quad_wave_file = open(file_name, 'w')
 
+    box_x = ni*dx
+    box_y = nj*dy
+    box_z = nk*dz+z0+amplitude_offset+amplitude
     quad_wave_file.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
-       (ni*dx,nj*dy,nk*dz,90.0,90.0,90.0) );
+       (box_x,box_y,box_z,90.0,90.0,90.0) );
 
     n = 1
     # Loop over all layers
@@ -244,11 +256,11 @@ def quad_substrate_wave (
                 z_pert = z + amplitude*sin( wave_number*x + wave_offset ) + amplitude_offset
                 assert z_pert>=0, "Negative height"
                 quad_wave_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
-                    ("ATOM", n % 100000, ao1, "SUB", 1, x+dx_so(), y, z_pert+dz_so()) )
+                    ("ATOM", n % 100000, ao1, "SUB", 1, x+dx_so()-box_x*floor((x+dx_so())/box_x), y, z_pert+dz_so()) )
                 quad_wave_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
-                    ("ATOM", n % 100000, asl, "SUB", 1, x, y, z_pert) )
+                    ("ATOM", n % 100000, asl, "SUB", 1, x-box_x*floor(x/box_x), y, z_pert) )
                 quad_wave_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
-                    ("ATOM", n % 100000, ao2, "SUB", 1, x-dx_so(), y, z_pert-dz_so()) )
+                    ("ATOM", n % 100000, ao2, "SUB", 1, x-dx_so()-box_x*floor((x-dx_so())/box_x), y, z_pert-dz_so()) )
                 n = n+1
 
     quad_wave_file.close()
@@ -875,3 +887,35 @@ class monatomic_crystal_substrate :
             fn.write( "%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
                 ("ATOM",n % 100000,a,"SUB",1,self.x_coord[n],self.y_coord[n],self.z_coord[n]) )
         fn.close()
+
+"""
+###############################################################################
+POSTPROCESSING AND ANALYSIS
+###############################################################################
+"""
+
+# Dictionary for atomic mass (non-dimensional?)
+
+def density_2d_binning ( file_name, residue_name, nbin_x, nbin_z ) :
+    assert file_name.split('.')[-1] == 'gro', "Invalid file format"
+    f_in = open(file_name, 'r')
+    title = f_in.readline()
+    n_atoms = int( f_in.readline() )
+    atomtype = []
+    x_pos = []
+    y_pos = []
+    z_pos = []
+    for idx in range(n_atoms) :
+        line = f_in.readline()
+        if line[5:10].strip() == residue_name :
+            atomtype.append(line[10:15].strip())
+            x_pos.append(float(line[20:28]))
+            y_pos.append(float(line[28:36]))
+            z_pos.append(float(line[36:44]))
+    line = f_in.readline()
+    box_x = float( line[0:10]  )
+    box_y = float( line[10:20] )
+    box_z = float( line[20:30] )
+    f_in.close()
+    # Define matrix with numpy for density binning and perform binning
+    # Output with matplotlib

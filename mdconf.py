@@ -807,26 +807,37 @@ def shift_and_resize_gro (
         f_in = open( input_file, 'r' )
         f_out = open( output_file, 'w' )
 
+        # This is NOT the way to go: the number of atoms per molecules should be variable!
+        n_atoms_mol = 3
+        mol_line = ['', '', '']
+
         idx = 0
         n_atoms = 0
+        mol_count = 0
         header = ''
         # This cannot work! I need to carve molecules, not atoms (change)!
         for line in f_in :
             idx += 1
             if idx > 2 and idx < n_lines :
+                if mol_count == 0 :
+                    ins = True
                 line_data = read_gro_line( line )
                 line_data[4] += delta_x
                 line_data[5] += delta_y
                 line_data[6] += delta_z
-                inx = ( line_data[4] >= 0 and line_data[4]<new_box_x )
-                iny = ( line_data[5] >= 0 and line_data[5]<new_box_y )
-                inz = ( line_data[6] >= 0 and line_data[6]<new_box_z )
-                if ( inx and iny and inz ) :
-                    n_atoms += 1
-                    f_out.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
-                        ( line_data[0], line_data[1], line_data[2], line_data[3],
-                            line_data[4], line_data[5], line_data[6],
-                            line_data[7], line_data[8], line_data[9] ) )
+                inx = ( line_data[4] > 0 and line_data[4] <= new_box_x )
+                iny = ( line_data[5] > 0 and line_data[5] <= new_box_y )
+                inz = ( line_data[6] > 0 and line_data[6] <= new_box_z )
+                ins = inx and iny and inz and ins
+                mol_line[mol_count] = "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" % ( line_data[0], 
+                        line_data[1], line_data[2], line_data[3], line_data[4], line_data[5], line_data[6],
+                            line_data[7], line_data[8], line_data[9] )
+                if ( mol_count == 2 and ins ) :
+                    n_atoms += n_atoms_mol
+                    f_out.write( mol_line[0] )
+                    f_out.write( mol_line[1] )
+                    f_out.write( mol_line[2] )
+                mol_count = (mol_count+1)%n_atoms_mol
             elif idx == n_lines :
                 f_out.write("%10.5f%10.5f%10.5f\n" % ( new_box_x, new_box_y, new_box_z ) )
             elif idx == 1 :

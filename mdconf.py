@@ -13,6 +13,38 @@ import matplotlib.pyplot as plt
 """
 
 """
+    UTILITY FUNCTIONS
+"""
+
+def count_line( file_name ) :
+    n_lines = 0
+    f_in = open( file_name, 'r')
+    for line in f_in :
+        n_lines += 1
+    f_in.close()
+    return n_lines
+
+def non_null_float( s ) :
+    if s == '' or s == '\n' :
+        return 0.0
+    else :
+        return float( s )
+
+def read_gro_line( line ) :
+    line_data = [None]*10
+    line_data[0] = int(line[0:5])
+    line_data[1] = str(line[5:10])
+    line_data[2] = str(line[10:15])
+    line_data[3] = int(line[15:20])
+    line_data[4] = float(line[20:28])
+    line_data[5] = float(line[28:36])
+    line_data[6] = float(line[36:44])
+    line_data[7] = non_null_float( line[44:52] )
+    line_data[8] = non_null_float( line[52:60] )
+    line_data[9] = non_null_float( line[60:68] )
+    return line_data
+
+"""
 ###############################################################################
 PREPROCESSING AND INITIAL CONFIGURATION
 ###############################################################################
@@ -753,6 +785,63 @@ def add_velocity_gro (
 
     f_out.close()
     f_in.close()
+
+
+"""
+    FUNCTION shift_and_resize_gro
+    Shift a whole configuration and resizes the simulation box
+"""
+def shift_and_resize_gro (
+        delta_x,
+        delta_y,
+        delta_z,
+        new_box_x,
+        new_box_y,
+        new_box_z,
+        input_file,
+        output_file = 'shf_res_conf.gro'
+        ) :
+
+        n_lines = count_line( input_file )
+
+        f_in = open( input_file, 'r' )
+        f_out = open( output_file, 'w' )
+
+        idx = 0
+        n_atoms = 0
+        header = ''
+        # This cannot work! I need to carve molecules, not atoms (change)!
+        for line in f_in :
+            idx += 1
+            if idx > 2 and idx < n_lines :
+                line_data = read_gro_line( line )
+                line_data[4] += delta_x
+                line_data[5] += delta_y
+                line_data[6] += delta_z
+                inx = ( line_data[4] >= 0 and line_data[4]<new_box_x )
+                iny = ( line_data[5] >= 0 and line_data[5]<new_box_y )
+                inz = ( line_data[6] >= 0 and line_data[6]<new_box_z )
+                if ( inx and iny and inz ) :
+                    n_atoms += 1
+                    f_out.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                        ( line_data[0], line_data[1], line_data[2], line_data[3],
+                            line_data[4], line_data[5], line_data[6],
+                            line_data[7], line_data[8], line_data[9] ) )
+            elif idx == n_lines :
+                f_out.write("%10.5f%10.5f%10.5f\n" % ( new_box_x, new_box_y, new_box_z ) )
+            elif idx == 1 :
+                header = line
+                f_out.write(line)
+            else :
+                f_out.write(line)
+
+        f_out.close()
+        f_in.close()
+
+        f_out = open( output_file, 'r+')
+        f_out.write(header)
+        f_out.write(str(n_atoms))
+        f_out.close()
 
 
 """

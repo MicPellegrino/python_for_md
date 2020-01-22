@@ -16,8 +16,8 @@ class Atom :
 
 def count_line( file_name ) :
     n_lines = 0
-    f_in = open(MDSystem.init_file, 'r')
-    for line in MDSystem.init_file :
+    f_in = open( file_name, 'r')
+    for line in f_in :
         n_lines += 1
     f_in.close()
     return n_lines

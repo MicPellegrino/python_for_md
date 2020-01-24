@@ -72,6 +72,7 @@ grad_norm = np.sqrt( np.power( grad_x, 2 ) + np.power( grad_z, 2 ) )
 half_den = 50.0
 epsilon = 3.5
 rectification = 1000
+smoothing_tune = 0.25
 
 in_range = lambda x: (x<(half_den+epsilon))*(x>(half_den-epsilon))
 f = np.vectorize(in_range)
@@ -116,9 +117,13 @@ x_data_od = np.array(x_data_ord)
 z_data_od = np.array(z_data_ord)
 
 # This approach may create aliasing at the initial (that is also the final) point
-tck, u = interpolate.splprep([x_data_ord, z_data_ord], s=0)
+tck, u = interpolate.splprep([x_data_ord, z_data_ord], s=smoothing_tune, task=0)
 unew = np.arange(0, 1.0, 0.005)
 out = interpolate.splev(unew, tck)
+x_spline = out[0]
+z_spline = out[1]
+# np.append(x_spline, x_spline[0])
+# np.append(z_spline, z_spline[0])
 
 ##############
 ## Plotting ##
@@ -130,7 +135,7 @@ out = interpolate.splev(unew, tck)
 plt.pcolor(X, Z, density_array, cmap=cm.bone)
 plt.colorbar()
 plt.plot(x_data_ord, z_data_ord, 'rx', markersize=5)
-plt.plot(out[0], out[1], 'r-')
+plt.plot(x_spline, z_spline, 'r-')
 # plt.contour(np.flip(density_array.transpose(), axis=0))
 plt.show()
 

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy import interpolate
 from scipy.interpolate import CubicSpline
+import math
 
 # density_array = np.fromfile('densmap.dat', dtype=float)
 # N_da = len(density_array)
@@ -73,16 +74,36 @@ f = np.vectorize(in_range)
 cont_points = f(density_array)
 x_data = []
 z_data = []
+f_data = []
 for i in range(0,nx):
     for j in range (0,nz):
         if cont_points[i,j] == 1 :
-            x_data.append(i)
-            z_data.append(j)
-x_data = h*np.array(x_data)
-z_data = h*np.array(z_data)
-# tck, u = interpolate.splprep([x_data, z_data], s=0)
-# unew = np.arange(0, 1.01, 0.01)
-# out = interpolate.splev(unew, tck)
+            x_data.append(h*i)
+            z_data.append(h*j)
+            # f_data.append(density_array[i,j])
+
+m = len(x_data)
+x_data_ord = [x_data[0]]
+x_data.pop(0)
+z_data_ord = [z_data[0]]
+z_data.pop(0)
+for k in range(1,m) :
+    dist = np.sqrt( np.power(np.array(x_data)-x_data_ord[k-1], 2)
+        + np.power(np.array(z_data)-z_data_ord[k-1], 2) )
+    l = np.argmin(dist)
+    x_data_ord.append(x_data[l])
+    x_data.pop(l)
+    z_data_ord.append(z_data[l])
+    z_data.pop(l)
+x_data_ord.append(x_data_ord[0])
+z_data_ord.append(z_data_ord[0])
+x_data_od = np.array(x_data_ord)
+z_data_od = np.array(z_data_ord)
+
+# THIS ONE DOES NOT WORK
+tck, u = interpolate.splprep([x_data_ord, z_data_ord], s=0)
+unew = np.arange(0, 1.01, 0.01)
+out = interpolate.splev(unew, tck)
 
 ##############
 ## Plotting ##
@@ -93,7 +114,8 @@ z_data = h*np.array(z_data)
 
 plt.pcolor(X, Z, density_array, cmap=cm.bone)
 plt.colorbar()
-plt.plot(x_data, z_data, 'rx', markersize=3.5)
+# plt.plot(x_data_ord, z_data_ord, 'rx', markersize=3.5)
+plt.plot(out[0], out[1], 'r-')
 # plt.contour(np.flip(density_array.transpose(), axis=0))
 plt.show()
 

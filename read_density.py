@@ -67,8 +67,12 @@ for i in range(1, nx-1) :
 grad_norm = np.sqrt( np.power( grad_x, 2 ) + np.power( grad_z, 2 ) )
 
 # Test for spline interpolation
+
+# Set-up values
 half_den = 50.0
-epsilon = 5.0
+epsilon = 3.5
+rectification = 1000
+
 in_range = lambda x: (x<(half_den+epsilon))*(x>(half_den-epsilon))
 f = np.vectorize(in_range)
 cont_points = f(density_array)
@@ -87,9 +91,20 @@ x_data_ord = [x_data[0]]
 x_data.pop(0)
 z_data_ord = [z_data[0]]
 z_data.pop(0)
-for k in range(1,m) :
-    dist = np.sqrt( np.power(np.array(x_data)-x_data_ord[k-1], 2)
-        + np.power(np.array(z_data)-z_data_ord[k-1], 2) )
+dist = np.sqrt( np.power(np.array(x_data)-x_data_ord[0], 2)
+    + np.power(np.array(z_data)-z_data_ord[0], 2) )
+l = np.argmin(dist)
+x_data_ord.append(x_data[l])
+x_data.pop(l)
+z_data_ord.append(z_data[l])
+z_data.pop(l)
+for k in range(2,m) :
+    dir_x_prev = x_data_ord[k-1]-x_data_ord[k-2]
+    dir_z_prev = z_data_ord[k-1]-z_data_ord[k-2]
+    dist_x = np.array(x_data)-x_data_ord[k-1]
+    dist_z = np.array(z_data)-z_data_ord[k-1]
+    p = ( ( dir_x_prev*dist_x + dir_z_prev*dist_z ) < 0 ).astype(int)
+    dist = np.sqrt( np.power(dist_x, 2) + np.power(dist_z, 2) ) + rectification*p
     l = np.argmin(dist)
     x_data_ord.append(x_data[l])
     x_data.pop(l)
@@ -100,9 +115,9 @@ z_data_ord.append(z_data_ord[0])
 x_data_od = np.array(x_data_ord)
 z_data_od = np.array(z_data_ord)
 
-# THIS ONE DOES NOT WORK
+# This approach may create aliasing at the initial (that is also the final) point
 tck, u = interpolate.splprep([x_data_ord, z_data_ord], s=0)
-unew = np.arange(0, 1.01, 0.01)
+unew = np.arange(0, 1.0, 0.005)
 out = interpolate.splev(unew, tck)
 
 ##############
@@ -114,7 +129,7 @@ out = interpolate.splev(unew, tck)
 
 plt.pcolor(X, Z, density_array, cmap=cm.bone)
 plt.colorbar()
-# plt.plot(x_data_ord, z_data_ord, 'rx', markersize=3.5)
+plt.plot(x_data_ord, z_data_ord, 'rx', markersize=5)
 plt.plot(out[0], out[1], 'r-')
 # plt.contour(np.flip(density_array.transpose(), axis=0))
 plt.show()

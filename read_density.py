@@ -22,6 +22,7 @@ for line in open('densmap.dat', 'r'):
 Nx = int( np.round(Lx/h) )
 Nz = int( np.round(Lz/h) )
 
+# SOLVED!
 # Nx = np.sqrt(Nda*Lx/Lz)
 # Nz = Nx*Lz/Lx
 # Nx = int( np.round(Nx) )
@@ -34,6 +35,7 @@ for line in open('densmap.dat', 'r'):
     density_array[idx:idx+len(vals)] = vals
     idx += len(vals)
 
+# SOLVED!
 # print(Nx*Nz)
 # print(len(density_array))
 # b = np.sqrt(N_da*Lx/Lz)
@@ -72,7 +74,7 @@ grad_norm = np.sqrt( np.power( grad_x, 2 ) + np.power( grad_z, 2 ) )
 half_den = 50.0
 epsilon = 3.5
 rectification = 1000
-smoothing_tune = 0.25
+smoothing_tune = 1e-5
 
 in_range = lambda x: (x<(half_den+epsilon))*(x>(half_den-epsilon))
 f = np.vectorize(in_range)
@@ -85,13 +87,15 @@ for i in range(0,nx):
         if cont_points[i,j] == 1 :
             x_data.append(h*i)
             z_data.append(h*j)
-            # f_data.append(density_array[i,j])
+            f_data.append(density_array[i,j])
 
 m = len(x_data)
 x_data_ord = [x_data[0]]
 x_data.pop(0)
 z_data_ord = [z_data[0]]
 z_data.pop(0)
+f_data_ord = [f_data[0]]
+f_data[0]
 dist = np.sqrt( np.power(np.array(x_data)-x_data_ord[0], 2)
     + np.power(np.array(z_data)-z_data_ord[0], 2) )
 l = np.argmin(dist)
@@ -99,6 +103,8 @@ x_data_ord.append(x_data[l])
 x_data.pop(l)
 z_data_ord.append(z_data[l])
 z_data.pop(l)
+f_data_ord.append(f_data[l])
+f_data.pop(l)
 for k in range(2,m) :
     dir_x_prev = x_data_ord[k-1]-x_data_ord[k-2]
     dir_z_prev = z_data_ord[k-1]-z_data_ord[k-2]
@@ -111,13 +117,20 @@ for k in range(2,m) :
     x_data.pop(l)
     z_data_ord.append(z_data[l])
     z_data.pop(l)
+    f_data_ord.append(f_data[l])
+    f_data.pop(l)
 x_data_ord.append(x_data_ord[0])
 z_data_ord.append(z_data_ord[0])
-x_data_od = np.array(x_data_ord)
-z_data_od = np.array(z_data_ord)
+f_data_ord.append(f_data_ord[0])
+x_data_ord = np.array(x_data_ord)
+z_data_ord = np.array(z_data_ord)
+f_data_ord = np.array(f_data_ord)
+
+weight = -np.absolute(f_data_ord-half_den)/epsilon + 1.0
+weight = weight / np.sum(weight)
 
 # This approach may create aliasing at the initial (that is also the final) point
-tck, u = interpolate.splprep([x_data_ord, z_data_ord], s=smoothing_tune, task=0)
+tck, u = interpolate.splprep([x_data_ord, z_data_ord], w=weight, s=smoothing_tune, task=0)
 unew = np.arange(0, 1.0, 0.005)
 out = interpolate.splev(unew, tck)
 x_spline = out[0]
@@ -137,6 +150,7 @@ plt.colorbar()
 plt.plot(x_data_ord, z_data_ord, 'rx', markersize=5)
 plt.plot(x_spline, z_spline, 'r-')
 # plt.contour(np.flip(density_array.transpose(), axis=0))
+plt.axis('scaled')
 plt.show()
 
 # plt.hist(density_array.reshape((nx*nz,1)), bins=int(np.sqrt(nx*nz)))

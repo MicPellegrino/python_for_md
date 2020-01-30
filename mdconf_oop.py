@@ -24,7 +24,7 @@ def count_line( file_name ) :
 
 def non_null_float( s ) :
     if s == '' or s == '\n' :
-        return = 0.0
+        return 0.0
     else :
         return float( s )
 
@@ -44,16 +44,43 @@ def read_gro_line( line ) :
 
 class MDSystem :
 
+    def __init__ ( MDSystem ) :
+        MDSystem.init_file = " "
+        MDSystem.tag = "blank_system"
+        MDSystem.title = " "
+        MDSystem.n_atoms = 0
+        MDSystem.atoms = []
+        MDSystem.box_xx = 0.0
+        MDSystem.box_yy = 0.0
+        MDSystem.box_zz = 0.0
+        MDSystem.box_xy = 0.0
+        MDSystem.box_xz = 0.0
+        MDSystem.box_yz = 0.0
+
     def __init__ ( MDSystem, file_name ) :
         MDSystem.init_file = file_name
+        MDSystem.tag = file_name.split('.')[0]
         ext = file_name.split('.')[-1]
         if ext == "gro" :
+            print("MDSystem: reading from .gro file")
             MDSystem.read_gro()
         elif ext == "pdb" :
-            print("WARNING: pdb files do not contain information regarding atoms velocities")
+            print("MDSystem: reading from .pdb file (velocity values not included!)")
             MDSystem.read_pdb()
         else :
             raise Exception("Unsupported file type")
+
+    def __init__ ( MDSystem, conf_type, par_list ) :
+        MDSystem.init_file = " "
+        MDSystem.tag = conf_type
+        if conf_type == "droplet" :
+            print("MDSystem: initializing water droplet")
+            # ...
+        elif conf_type == "substrate" :
+            print("MDSystem: initializing substrate")
+            # ...
+        else :
+            raise Exception("Unrecognized configuration")
 
     def read_gro ( MDSystem ) :
         # Count number of lines
@@ -75,5 +102,5 @@ class MDSystem :
         MDSystem.box_yz = non_null_float( line[50:60] )
         f_in.close()
 
-    def read_pdb () :
+    # def read_pdb ( MDSystem ) :
         # ...

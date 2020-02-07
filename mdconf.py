@@ -73,8 +73,11 @@ def lj_substrate (
 
     lj_file = open(file_name, 'w')
 
+    box_x = ni*dx
+    box_y = nj*dy
+    box_z = nk*dz
     lj_file.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
-       (ni*dx,nj*dy,nk*dz,90.0,90.0,90.0) );
+       (box_x,box_y,box_z,90.0,90.0,90.0) );
 
     # THESE NEED TO BE MODIFIED ACCORDINGLY W.R.T. ALPHA1 AND ALPHA2
     ###
@@ -86,19 +89,23 @@ def lj_substrate (
     z0 = dz/2;
     ###
 
+    wrap = lambda t, bt : t-bt*floor(t/bt)
+
     n = 1;
     for k in range(nk):
-        if k < nk-1 :
-            a = "CUB"
-        else:
-            a = "CUS"
+        # Distinguish between bulk and substrate
+        # if k < nk-1 :
+        #     a = "CUB"
+        # else:
+        #     a = "CUS"
+        a = "CUB"
         z = z0 + k*dz
         for i in range(ni):
             for j in range(nj):
                 y = y0 + j*dy + k*dy_z
                 x = x0 + i*dx + j*dx_y + k*dx_z
                 lj_file.write( "%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
-                    ("ATOM",n % 100000,a,"SUB",1,x,y,z) )
+                    ("ATOM",n % 100000,a,"SUB",1,wrap(x,box_x),wrap(y,box_y),wrap(z,box_z)) )
                 n = n+1
 
     lj_file.close()
@@ -225,8 +232,9 @@ def quad_substrate_wave (
     ):
 
     # Lattice parameters
-    # sp = 4.50
-    sp = 4.50/sqrt(2)
+    sp = 4.50
+    # sp = 4.50/sqrt(2)
+    # sp = 4.50 / sqrt( 1 + (amplitude**2) * (wave_number**2) )
     alpha_1 = sqrt(3.0/4.0)
     alpha_2 = sqrt(2.0/3.0)
 
@@ -487,6 +495,7 @@ def merge_to_substrate_gro (
 
     sub_max_x = 0
     sub_max_y = 0
+    sub_max_z = 0
 
     idx = 0
     for line in sub :
@@ -497,6 +506,8 @@ def merge_to_substrate_gro (
         elif idx == n_lines_sub:
             sub_max_x = float(line.split()[0])
             sub_max_y = float(line.split()[1])
+            # Not needed in droplet configuration
+            sub_max_z = float(line.split()[2])
 
     # C format: "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f"
     line_data = [None]*10
@@ -514,8 +525,10 @@ def merge_to_substrate_gro (
         if idx > 2 and idx < n_lines_liq :
             lines[n_count] = line
             y = float(line[28:36])
+            # Not needed in droplet configuration
+            z = float(line[36:44])
             if n_count == 0 :
-                not_carve = y <= sub_max_y
+                not_carve = ( y <= sub_max_y ) and ( z > sub_max_z )
             else :
                 not_carve = not_carve*(y <= sub_max_y)
             if n_count == 2 and not_carve :
@@ -829,7 +842,7 @@ def shift_and_resize_gro (
                 iny = ( line_data[5] > 0 and line_data[5] <= new_box_y )
                 inz = ( line_data[6] > 0 and line_data[6] <= new_box_z )
                 ins = inx and iny and inz and ins
-                mol_line[mol_count] = "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" % ( line_data[0], 
+                mol_line[mol_count] = "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" % ( line_data[0],
                         line_data[1], line_data[2], line_data[3], line_data[4], line_data[5], line_data[6],
                             line_data[7], line_data[8], line_data[9] )
                 if ( mol_count == 2 and ins ) :

@@ -23,16 +23,21 @@ flat_angles = np.array([110, 90, 70, 37])
 
 # Substrate amplitude and wavelenght
 amplitude = 4.0
-frequency = np.zeros(5, dtype=float)
-for k in range(5) :
-    frequency[k] = (0.75+0.25*k)*(1.0/amplitude)
+# frequency = np.zeros(5, dtype=float)
+# for k in range(5) :
+#     frequency[k] = (0.75+0.25*k)*(1.0/amplitude)
+frequency = np.zeros(10, dtype=float)
+for k in range(10) :
+     frequency[k] = (0.75+0.25*k)*(1.0/amplitude)
 
 # Roughness parameter
-a = np.zeros(6, dtype=float)
+a = np.zeros(len(frequency)+1, dtype=float)
 a[0] = 0.0
-for k in range(1,6) :
+for k in range(1,len(frequency)+1) :
     a[k] = (0.75+0.25*k)**2
 xi_r = rough_parameter(a)
+
+print(a)
 
 # Storage for contact angles
 cos_wave_angle = np.outer( xi_r, np.cos( np.deg2rad(flat_angles) ) )

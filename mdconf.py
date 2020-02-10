@@ -245,6 +245,8 @@ def quad_substrate_wave (
 
     x = 0.0
     norm = lambda : sqrt( 1.0 + 1.0/(amplitude**2*wave_number**2*cos(wave_number*x+wave_offset)**2) )
+    scale_x = lambda : 1.0 / sqrt( 1.0 + amplitude**2*wave_number**2*cos(wave_number*x+wave_offset)**2 )
+    scale_z = lambda : amplitude*wave_number*cos(wave_number*x+wave_offset)*scale_x()
 
     d_so = 1.51
 
@@ -279,6 +281,9 @@ def quad_substrate_wave (
     quad_wave_file.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
        (box_x,box_y,box_z,90.0,90.0,90.0) );
 
+    # In order to gain accuracy in predicting the next point
+    inner_steps = 5
+
     n = 1
     # Loop over all layers
     for k in range(nk) :
@@ -289,10 +294,13 @@ def quad_substrate_wave (
             a = "CUS"
         z = z0 + k*dz
         # Loop over rows and columns
-        for i in range(ni) :
-            for j in range(nj) :
+        for j in range(nj) :
+            x = x0 + j*dx_y + k*dx_z
+            for i in range(ni) :
                 y = y0 + j*dy + k*dy_z
-                x = x0 + i*dx + j*dx_y + k*dx_z
+                # x = x0 + i*dx + j*dx_y + k*dx_z
+                for ii in range(inner_steps) :
+                    x = x + (1.0/inner_steps)*scale_x()*dx
                 z_pert = z + amplitude*sin( wave_number*x + wave_offset ) + amplitude_offset
                 assert z_pert>=0, "Negative height"
                 quad_wave_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %

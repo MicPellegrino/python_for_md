@@ -26,8 +26,8 @@ amplitude = 4.0
 # frequency = np.zeros(5, dtype=float)
 # for k in range(5) :
 #     frequency[k] = (0.75+0.25*k)*(1.0/amplitude)
-frequency = np.zeros(10, dtype=float)
-for k in range(10) :
+frequency = np.zeros(12, dtype=float)
+for k in range(12) :
      frequency[k] = (0.75+0.25*k)*(1.0/amplitude)
 
 # Roughness parameter
@@ -53,11 +53,16 @@ xi_fil = rough_parameter(a_fil)
 theta_fil = [81.66, 66.35]
 
 # Plotting
+
 plt.plot(xi_fob, theta_fob, 'kx', markersize=8, label='hydrophobic')
 plt.plot(xi_fil, theta_fil, 'ks', markersize=8, label='hydrophylic')
-plt.plot(xi_r, wave_angle, 'o--')
+plt.plot(xi_r, wave_angle, '.-')
 plt.xlabel('Roughness parameter [nondim.]')
 plt.ylabel('Contact angle [deg]')
 plt.legend(loc='lower left')
 plt.show()
 
+plt.plot(a, xi_r, 'k-')
+plt.xlabel('a')
+plt.ylabel('r')
+plt.show()

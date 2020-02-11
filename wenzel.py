@@ -37,8 +37,6 @@ for k in range(1,len(frequency)+1) :
     a[k] = (0.75+0.25*k)**2
 xi_r = rough_parameter(a)
 
-print(a)
-
 # Storage for contact angles
 cos_wave_angle = np.outer( xi_r, np.cos( np.deg2rad(flat_angles) ) )
 sat_arccos = lambda cval : 0.0 if (cval>1.0) else np.rad2deg(np.arccos(cval))
@@ -52,17 +50,36 @@ a_fil = np.array( [1.5625, 3.0625] )
 xi_fil = rough_parameter(a_fil)
 theta_fil = [81.66, 66.35]
 
+# Fitting the charge-angle relation
+charge_data = np.append( charges, 0.79 )
+angle_data = np.append( flat_angles, 0.0 )
+p = np.polyfit(charge_data, angle_data, 2)
+q_val = np.linspace(charge_data[0], charge_data[-1], 250)
+t_val = np.polyval(p, q_val)
+
 # Plotting
 
-plt.plot(xi_fob, theta_fob, 'kx', markersize=8, label='hydrophobic')
-plt.plot(xi_fil, theta_fil, 'ks', markersize=8, label='hydrophylic')
+# plt.plot(xi_fob, theta_fob, 'kx', markersize=8, label='hydrophobic')
+# plt.plot(xi_fil, theta_fil, 'ks', markersize=8, label='hydrophylic')
 plt.plot(xi_r, wave_angle, '.-')
-plt.xlabel('Roughness parameter [nondim.]')
-plt.ylabel('Contact angle [deg]')
-plt.legend(loc='lower left')
+plt.xlabel('Roughness parameter [nondim.]', fontsize=20.0)
+plt.ylabel('Contact angle [deg]', fontsize=20.0)
+# plt.legend(loc='lower left')
+plt.title('Wenzel law for some reference c.a.', fontsize=20.0)
 plt.show()
 
-plt.plot(a, xi_r, 'k-')
-plt.xlabel('a')
-plt.ylabel('r')
+plt.plot(a, xi_r, 'k.-')
+plt.xlabel('a', fontsize=20.0)
+plt.ylabel('r', fontsize=20.0)
+plt.title('Roughness param. as a function of combined height and frequency', fontsize=20.0)
+plt.show()
+
+plt.plot(q_val, t_val, 'r-')
+plt.plot(q_val, t_val+3.0, 'r--')
+plt.plot(q_val, t_val-3.0, 'r--')
+
+plt.plot(charge_data, angle_data, 'ko')
+plt.xlabel('Charge [e]', fontsize=20.0)
+plt.ylabel('Angle [deg]', fontsize=20.0)
+plt.title('Fitted charge-angle relation', fontsize=20.0)
 plt.show()

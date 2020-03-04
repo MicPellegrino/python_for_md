@@ -16,8 +16,11 @@ a = sc.optimize.bisect(f_rough, 9.25, 11.85)
 
 d_hb = 3.0                                  # [Å]
 c = sqrt(a)/(2.0*pi)                        # Nondim.
-# l = d_hb*np.array([1.000, 10.00, 100.0])
-l = 10*d_hb                                 # [Å]
+# If PI_1 gets to small, the curvature of the wavy substrate may beak LINCS algorithm
+# Keep it large enough, but still around one o.o.m. larger than hydrogen bond distance
+# (so that interesting things may be observed...)
+PI_1 = 15                                   # Nondim.
+l = PI_1*d_hb                               # [Å]
 h = c * l                                   # [Å]
 omega = 2*pi/l                              # [Å^-1]
 
@@ -48,7 +51,7 @@ box_y = nj*dy
 box_z = nk*dz+2*h+3.0
 
 # CREATE WAVY SUBSTRATE (NB! .pbd format is in Å !!!)
-work_dir = os.getcwd()+'/substrate_large'
+work_dir = os.getcwd()+'/PreprocessingLarge/substrate_large'
 fn1 = 'quad_sub_flat'
 fn2 = 'quad_sub_wave'
 bend = True

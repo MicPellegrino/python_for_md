@@ -8,7 +8,7 @@ import mdconf as mdc
 # file_water_out = '2dCylDropRoughSub/wat_equil_ext.pdb'
 
 file_water_in = 'wat_equil.pdb'
-file_water_out = 'droplet_large/water_box.pdb'
+file_water_out = 'PreprocessingLarge/water_box.pdb'
 
 # qs = open(file_substrate, 'r')
 we = open(file_water_in, 'r')
@@ -32,8 +32,9 @@ nz = int( ceil( Lz/float(line1_we[3]) ) )
 we.close()
 # qs.close()
 
-# os.system("gmx20 genconf -f "+file_water_in+" -o "+file_water_out+" -nbox %.3f %.3f %.3f" % (nx, ny, nz))
+os.system("gmx20 genconf -f "+file_water_in+" -o "+file_water_out+" -nbox %.3f %.3f %.3f" % (nx, ny, nz))
 
-file_droplet = 'droplet_large/water_droplet.pdb'
+file_droplet = 'PreprocessingLarge/water_droplet.pdb'
+
 radius_factor = 0.5
 mdc.carve_2D_droplet(radius_factor, file_water_out, file_droplet, 'p')

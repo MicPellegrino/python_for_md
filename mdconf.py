@@ -898,7 +898,7 @@ def shift_and_resize_gro (
 
         f_out = open( output_file, 'r+')
         f_out.write(header)
-        f_out.write(str(n_atoms))
+        f_out.write(" "+str(n_atoms))
         f_out.close()
 
 

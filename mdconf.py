@@ -648,16 +648,28 @@ def shift_droplet_gro (
     shift,
     direction,
     droplet_file_in,
-    droplet_file_out = 'shifted_droplet.gro'
+    droplet_file_out = 'shifted_droplet.gro',
+    h = 0
     ) :
 
     assert direction == 'x' or direction == 'y' or direction == 'z', "Invalid direction"
 
     # Count lines
-    n_lines = 0
+    n_lines = count_line( droplet_file_in )
+
+    # Read box lenght
+    idx = 0
+    L = 0
     fdi = open(droplet_file_in, 'r')
     for line in fdi :
-        n_lines += 1
+        idx += 1
+        if idx == n_lines:
+            if direction == 'x' :
+                L = float(line.split()[0])
+            elif direction == 'y' :
+                L = float(line.split()[1])
+            else :
+                L = float(line.split()[2])
     fdi.close()
 
     fdi = open(droplet_file_in, 'r')
@@ -670,36 +682,53 @@ def shift_droplet_gro (
     for line in fdi :
         idx += 1
         if idx > 2 and idx < n_lines :
-            line_data[0] = int(line[0:5])
-            line_data[1] = str(line[5:10])
-            line_data[2] = str(line[10:15])
-            line_data[3] = int(line[15:20])
-            line_data[4] = float(line[20:28])
-            line_data[5] = float(line[28:36])
-            line_data[6] = float(line[36:44])
-            line_data[7] = line[44:52]
-            if line_data[7] == '' or line_data[7] == '\n' :
-                line_data[7] = 0.0
-            else :
-                line_data[7] = float(line_data[7])
-            line_data[8] = line[52:60]
-            if line_data[8] == '' or line_data[8] == '\n' :
-                line_data[8] = 0.0
-            else :
-                line_data[8] = float(line_data[8])
-            line_data[9] = line[60:68]
-            if line_data[9] == '' or line_data[9] == '\n' :
-                line_data[9] = 0.0
-            else :
-                line_data[9] = float(line_data[9])
+            line_data = read_gro_line(line)
+            # line_data[0] = int(line[0:5])
+            # line_data[1] = str(line[5:10])
+            # line_data[2] = str(line[10:15])
+            # line_data[3] = int(line[15:20])
+            # line_data[4] = float(line[20:28])
+            # line_data[5] = float(line[28:36])
+            # line_data[6] = float(line[36:44])
+            # line_data[7] = line[44:52]
+            # if line_data[7] == '' or line_data[7] == '\n' :
+            #     line_data[7] = 0.0
+            # else :
+            #     line_data[7] = float(line_data[7])
+            # line_data[8] = line[52:60]
+            # if line_data[8] == '' or line_data[8] == '\n' :
+            #     line_data[8] = 0.0
+            # else :
+            #     line_data[8] = float(line_data[8])
+            # line_data[9] = line[60:68]
+            # if line_data[9] == '' or line_data[9] == '\n' :
+            #     line_data[9] = 0.0
+            # else :
+            #     line_data[9] = float(line_data[9])
             if line_data[1] == "SUB  " :
                 fdo.write(line)
             else :
+                if direction=='x':
+                    line_data[4] += shift
+                    if line_data[4] < h:
+                        line_data[4] = line_data[4]+L-2*h
+                    elif line_data[4] > L-h :
+                        line_data[4] = line_data[4]-L+2*h
+                elif direction=='y':
+                    line_data[5] += shift
+                    if line_data[5] < h:
+                        line_data[5] = line_data[5]+L-2*h
+                    elif line_data[5] > L-h :
+                        line_data[5] = line_data[5]-L+2*h
+                else :
+                    line_data[6] += shift
+                    if line_data[6] < h:
+                        line_data[6] = line_data[6]+L-2*h
+                    elif line_data[6] > L-h :
+                        line_data[6] = line_data[6]-L+2*h
                 fdo.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
                     ( line_data[0], line_data[1], line_data[2], line_data[3],
-                        line_data[4]+shift*(direction=='x'),
-                        line_data[5]+shift*(direction=='y'),
-                        line_data[6]+shift*(direction=='z'),
+                        line_data[4], line_data[5], line_data[6],
                         line_data[7], line_data[8], line_data[9] ) )
         else :
             fdo.write(line)

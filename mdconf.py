@@ -44,6 +44,17 @@ def read_gro_line( line ) :
     line_data[9] = non_null_float( line[60:68] )
     return line_data
 
+def read_box_pdb( file_in, pattern = "CRYST1" ) :
+    f = open(file_in, 'r')
+    for line in f :
+        cols = line.split()
+        if cols[0] == pattern:
+            bx = float(cols[1])
+            by = float(cols[2])
+            bz = float(cols[3])
+            break
+    f.close()
+    return bx, by, bz
 
 """
 COLUMNS        DATA  TYPE    FIELD        DEFINITION
@@ -234,6 +245,43 @@ def quad_substrate (
                 n = n+1
 
     quad_file.close()
+
+"""
+    FUNCTION checkers_substrate
+    [...]
+"""
+def checkers_substrate (
+    patch_lenght,
+    file_in1,
+    file_in2,
+    file_out = 'checkers_substrate.pdb' ) :
+
+    # Checking if the two files have the same pbc box dimensions
+    bx1, by1, bz1 = read_box_pdb( file_in1 )
+    bx2, by2, bz2 = read_box_pdb( file_in2 )
+    assert  bx1==bx2 and by1==by2 and bz1==bz2, "Box dimensions mismatch"
+
+    fin1 = open( file_in1, 'r' )
+    fin2 = open( file_in2, 'r' )
+    fout = open( file_out, 'w' )
+
+    for line in fin1 :
+        cols = line.split()
+        if cols[0] == "CRYST1":
+            fout.write(line)
+        if cols[0] == "ATOM":
+            if int(float(cols[5])/patch_lenght)%2 == 0 :
+                 fout.write(line)
+
+    for line in fin2 :
+        cols = line.split()
+        if cols[0] == "ATOM":
+            if int(float(cols[5])/patch_lenght)%2 == 1 :
+                 fout.write(line)
+
+    fout.close()
+    fin2.close()
+    fin1.close()
 
 
 """
@@ -927,7 +975,7 @@ def shift_and_resize_gro (
 
         f_out = open( output_file, 'r+')
         f_out.write(header)
-        f_out.write(" "+str(n_atoms))
+        f_out.write(" "+str(n_atoms)+"\n")
         f_out.close()
 
 

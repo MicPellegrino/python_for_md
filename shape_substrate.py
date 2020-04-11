@@ -8,7 +8,8 @@ import scipy as sc
 import scipy.special
 
 # GROMACS version
-gmx = 'gmx20'
+# gmx = 'gmx20'
+gmx = 'gmx'
 
 # Roughness factor
 f_rough = lambda a2 : (2.0/pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))
@@ -48,6 +49,13 @@ os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
 file_substrate_gro = '/home/michele/python_for_md/Droplet20nmExp/Substrates/sub_flat.gro'
 mdc.shift_and_resize_gro(-Ly/10, 0.0, 0.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
 
+print('\n### FLAT ###\n')
+print('h = '+str(h))
+print('r = '+str(1))
+print('a = '+str(0))
+print('omega = 0')
+print('lambda = inf')
+
 # Rough
 for idx in range(5) :
     w_n = (0.75+idx*0.25)*(1.0/h)   # [Å^-1]
@@ -62,6 +70,57 @@ for idx in range(5) :
     # NB in .gro files units are expressed in nanometers
     file_substrate_gro = '/home/michele/python_for_md/Droplet20nmExp/Substrates/sub_wave'+str(int(idx+1))+'.gro'
     mdc.shift_and_resize_gro(-Ly/10, 0.0, 0.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
+
+    print('\n### WAVE '+str(idx)+' ###\n')
+    print('h = '+str(h))
+    print('r = '+str(r0))
+    print('a = '+str(np.sqrt(a2)))
+    print('omega = '+str(w_n))
+    print('lambda = '+str(2*np.pi/w_n))
+
+# Probing a = 0.25 and a = 0.50
+w_0 = (1.0/h)       # [Å^-1]
+
+a2 = 0.50
+h_var = a2/w_0
+r0 = f_rough(a2)
+print('\n### H | a2=0.5 ###\n')
+print('h = '+str(h_var))
+print('r = '+str(r0))
+print('a = '+str(np.sqrt(a2)))
+print('omega = '+str(w_0))
+print('lambda = '+str(2*np.pi/w_0))
+
+ni = int( np.round(r0*(Lx+bf)/sp) )
+file_substrate_pdb = '/home/michele/python_for_md/Droplet20nmExp/Substrates/sub_height1.pdb'
+file_uncut_gro = '/home/michele/python_for_md/Droplet20nmExp/Substrates/uncut_height1.gro'
+mdc.quad_substrate_wave(h_var, h_off, w_0, w_off, bend, ni, nj, nk, file_substrate_pdb)
+print( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
+os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
+# NB in .gro files units are expressed in nanometers
+file_substrate_gro = '/home/michele/python_for_md/Droplet20nmExp/Substrates/sub_height1.gro'
+mdc.shift_and_resize_gro(-Ly/10, 0.0, 0.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
+
+a2 = 0.25
+h_var = a2/w_0
+r0 = f_rough(a2)
+print('\n### H | a2=0.5 ###\n')
+print('h = '+str(h_var))
+print('r = '+str(r0))
+print('a = '+str(np.sqrt(a2)))
+print('omega = '+str(w_0))
+print('lambda = '+str(2*np.pi/w_0))
+
+ni = int( np.round(r0*(Lx+bf)/sp) )
+file_substrate_pdb = '/home/michele/python_for_md/Droplet20nmExp/Substrates/sub_height2.pdb'
+file_uncut_gro = '/home/michele/python_for_md/Droplet20nmExp/Substrates/uncut_height2.gro'
+mdc.quad_substrate_wave(h_var, h_off, w_0, w_off, bend, ni, nj, nk, file_substrate_pdb)
+print( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
+os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
+# NB in .gro files units are expressed in nanometers
+file_substrate_gro = '/home/michele/python_for_md/Droplet20nmExp/Substrates/sub_height2.gro'
+mdc.shift_and_resize_gro(-Ly/10, 0.0, 0.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
+
 
 # # Determine new dimensions and resize water box
 # file_water_in = 'wat_equil.pdb'
@@ -87,4 +146,3 @@ for idx in range(5) :
 # file_droplet = '2dCylDropRoughSubTest4/droplet/wat_droplet.pdb'
 # beta = 0.225
 # mdc.carve_2D_droplet(beta, file_water_out, file_droplet, 'p')
-

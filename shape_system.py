@@ -51,4 +51,3 @@ os.system("gmx genconf -f " + file_water_in + " -o " + file_water_out + " -nbox 
 file_droplet = '2dCylDropRoughSubTest4/droplet/wat_droplet.pdb'
 beta = 0.225
 mdc.carve_2D_droplet(beta, file_water_out, file_droplet, 'p')
-

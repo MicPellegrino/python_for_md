@@ -664,6 +664,7 @@ def carve_rectangle(
 
     box_x = 0.0
     box_z = 0.0
+    box_y = 0.0
 
     # Dummy
     n = 0
@@ -687,6 +688,7 @@ def carve_rectangle(
             cols = line.split()
             if cols[0] == "CRYST1":
                 box_x = float(cols[1])
+                box_y = float(cols[2])
                 box_z = float(cols[3])
                 print("Lx = %f, Lz = %f" % (box_x-2.0*dist_x, box_z-2.0*dist_z) )
                 droplet_file.write(line)
@@ -698,14 +700,17 @@ def carve_rectangle(
                     droplet_file.write(line)
                 else :
                     x = float(line[30:37])
+                    y = float(line[38:45])
                     z = float(line[46:53])
                     line_mol[n_count] = line
                     if n_count == 0 :
                         in_rect = (x > dist_x) * ( x <= box_x-dist_x ) \
-                            * (z > dist_z) * ( z <= box_z-dist_z )
+                            * (z > dist_z) * ( z <= box_z-dist_z ) \
+                            * (y > 0.0) * (y < box_y)
                     else :
                         in_rect = in_rect * (x > dist_x) * ( x <= box_x-dist_x ) \
-                            * (z > dist_z) * ( z <= box_z-dist_z )
+                            * (z > dist_z) * ( z <= box_z-dist_z ) \
+                            * (y > 0.0) * (y < box_y)
                     if n_count == (n_atom_mol-1) and in_rect :
                         for k in range(n_atom_mol) :
                             droplet_file.write(line_mol[k])

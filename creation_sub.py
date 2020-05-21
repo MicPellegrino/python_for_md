@@ -48,9 +48,12 @@ print('l = \t\t'+str(l))
 print('h = \t\t'+str(h))
 print('omega = \t'+str(omega))
 
-ni_f = int(np.round(Lx/sp))
-ni_w = int(np.round(r0*(Lx+buffer)/sp))
-nj = int(np.round(Ly/(sp*alpha_1)))
+# TILTING W.R.T. WETTING FRONT
+theta = 25.0
+
+ni_f = int(np.round( Lx/sp ))
+ni_w = int(np.round( r0*(Lx+buffer)/sp ))
+nj = int(np.round( Ly/(sp*alpha_1*np.cos(np.deg2rad(theta))) ))
 nk = 1
 
 box_y = nj*dy
@@ -59,12 +62,12 @@ box_z = nk*dz+2*h+3.0
 # CREATE WAVY SUBSTRATE (NB! .pbd format is in Å !!!)
 gmx = 'gmx'
 # gmx = 'gmx20'
-work_dir = os.getcwd()+'/PreprocessingLarge/substrate_large'
+work_dir = os.getcwd()+'/PreprocessingLarge/substrate_tilted'
 fn1 = 'quad_sub_flat'
 fn2 = 'quad_sub_wave'
 bend = True
 mdc.quad_substrate(ni_f, nj, nk, work_dir+'/'+fn1+'.pdb')
-mdc.quad_substrate_wave(h, h, omega, 0.0, bend, ni_w, nj, nk, work_dir+'/'+fn2+'.pdb')
+mdc.quad_substrate_wave_tilted(h, h, omega, 0.0, bend, theta, ni_w, nj, nk, work_dir+'/'+fn2+'.pdb')
 os.system(gmx+' editconf -f '+work_dir+'/'+fn1+'.pdb -o '+work_dir+'/'+fn1+'.gro')
 os.system(gmx+' editconf -f '+work_dir+'/'+fn2+'.pdb -o '+work_dir+'/'+fn2+'.gro')
 # mdc.shift_and_resize_gro(-Ly, 0.0, 0.0, 300.0, box_y, box_z, work_dir+'/'+fn1+'.gro', work_dir+'/'+fn1+'_res.gro')

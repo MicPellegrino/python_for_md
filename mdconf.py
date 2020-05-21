@@ -247,6 +247,88 @@ def quad_substrate (
     quad_file.close()
 
 """
+    FUNCTION quad_double_layer
+    [...]
+"""
+def quad_double_layer (
+    dist,
+    ni = 10,
+    nj = 10,
+    nk = 1,
+    file_name = 'quad_double_layer.pdb' ):
+
+    # Lattice parameters
+    sp = 4.50
+    alpha_1 = sqrt(3.0/4.0)
+    alpha_2 = sqrt(2.0/3.0)
+
+    # Atom types
+    asl = "SI"
+    ao1 = "O1"
+    ao2 = "O2"
+
+    # Distance of oxigen atoms
+    d_so = 1.51
+
+    # Calculate spacing
+    dx = sp;
+    dy = sp*alpha_1;
+    dz = sp*alpha_2;
+
+    # Row spacing
+    dx_y = dx/2.0
+    dx_z = 0.0
+    dy_z = 0.0
+
+    # Starting positions
+    x0 = dx/4.0
+    y0 = dy/6.0
+    # Arbitrary offset
+    z0 = 3.0
+
+    quad_file = open(file_name, 'w')
+
+    box_x = ni*dx
+    box_y = nj*dy
+    box_z = 2.0*(nk*dz) + dist
+    quad_file.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
+       (box_x,box_y,box_z,90.0,90.0,90.0) )
+
+    n = 1
+    # Loop over all layers
+    for k in range(nk) :
+        # Check if bulk or not
+        """
+        if k < (nk - 1) :
+            a = "CUB"
+        else :
+            a = "CUS"
+        """
+        z = z0 + k*dz
+        # Loop over rows and columns
+        for i in range(ni) :
+            for j in range(nj) :
+                y = y0 + j*dy + k*dy_z
+                x = x0 + i*dx + j*dx_y + k*dx_z
+                # Write bottom layer
+                quad_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM", n % 100000, ao1, "SUB", 1, x-box_x*floor(x/box_x), y, z+d_so) )
+                quad_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM", n % 100000, asl, "SUB", 1, x-box_x*floor(x/box_x), y, z) )
+                quad_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM", n % 100000, ao2, "SUB", 1, x-box_x*floor(x/box_x), y, z-d_so) )
+                # Write top layer
+                quad_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM", n % 100000, ao1, "SUB", 1, x-box_x*floor(x/box_x), y, z+d_so+dist) )
+                quad_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM", n % 100000, asl, "SUB", 1, x-box_x*floor(x/box_x), y, z+dist) )
+                quad_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM", n % 100000, ao2, "SUB", 1, x-box_x*floor(x/box_x), y, z-d_so+dist) )
+                n = n+1
+
+    quad_file.close()
+
+"""
     FUNCTION checkers_substrate
     [...]
 """
@@ -384,6 +466,114 @@ def quad_substrate_wave (
 
 
 """
+    [...]
+"""
+def quad_substrate_wave_tilted (
+    amplitude,
+    amplitude_offset,
+    wave_number,
+    wave_offset,
+    bend,
+    theta = 0.0,
+    ni = 10,
+    nj = 10,
+    nk = 1,
+    file_name = 'quad_substrate_wave.pdb'
+    ):
+
+    # Tilting sine and cosine
+    sin_tl = np.sin(np.deg2rad(theta))
+    cos_tl = np.cos(np.deg2rad(theta))
+
+    # Lattice parameters
+    sp = 4.50
+    # sp = 4.50/sqrt(2)
+    # sp = 4.50 / sqrt( 1 + (amplitude**2) * (wave_number**2) )
+    alpha_1 = sqrt(3.0/4.0)
+    alpha_2 = sqrt(2.0/3.0)
+
+    # Atom types
+    asl = "SI"
+    ao1 = "O1"
+    ao2 = "O2"
+
+    x = 0.0
+    norm = lambda : sqrt( 1.0 + 1.0/(amplitude**2*wave_number**2*cos(wave_number*x+wave_offset)**2) )
+    scale_x = lambda : 1.0 / sqrt( 1.0 + amplitude**2*wave_number**2*cos(wave_number*x+wave_offset)**2 )
+    scale_z = lambda : amplitude*wave_number*cos(wave_number*x+wave_offset)*scale_x()
+
+    d_so = 1.51
+
+    # Distance of oxigen atoms
+    if bend == False :
+        dx_so = lambda : 0.00
+        dz_so = lambda : d_so
+    else :
+        dx_so = lambda : ( d_so/norm() )
+        dz_so = lambda : - ( d_so/norm() ) / (amplitude*wave_number*cos(wave_number*x+wave_offset))
+
+    # Calculate spacing
+    dx = sp;
+    dy = sp*alpha_1*cos_tl;
+    dz = sp*alpha_2;
+
+    # Tilting displacement
+    dx_tl = alpha_1*sp*sin_tl
+
+    # Row spacing
+    dx_y = dx/2.0
+    dx_z = 0.0
+    dy_z = 0.0
+
+    # Starting positions
+    x0 = dx/4.0
+    y0 = dy/6.0
+    z0 = 3.0
+
+    quad_wave_file = open(file_name, 'w')
+
+    box_x = ni*dx
+    box_y = nj*dy*cos_tl
+    box_z = nk*dz+z0+amplitude_offset+amplitude
+    quad_wave_file.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
+       (box_x,box_y,box_z,90.0,90.0,90.0) );
+
+    # In order to gain accuracy in predicting the next point
+    inner_steps = 5
+
+    n = 1
+    # Loop over all layers
+    for k in range(nk) :
+    # Check if bulk or not
+        if k < (nk - 1) :
+            a = "CUB"
+        else :
+            a = "CUS"
+        z = z0 + k*dz
+        # Loop over rows and columns
+        for j in range(nj) :
+            x = x0 + j*(dx_y+dx_tl) + k*dx_z
+            for i in range(ni) :
+                y = y0 + j*dy + k*dy_z
+                # x = x0 + i*dx + j*dx_y + k*dx_z
+                for ii in range(inner_steps) :
+                    x = x + (1.0/inner_steps)*scale_x()*dx
+                z_pert = z + amplitude*sin( wave_number*(x) + wave_offset ) + amplitude_offset
+                assert z_pert>=0, "Negative height"
+                quad_wave_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM", n % 100000, ao1, "SUB", 1, x+dx_so()-box_x*floor((x+dx_so())/box_x) + j*dx_tl, \
+                    y, z_pert+dz_so()) )
+                quad_wave_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM", n % 100000, asl, "SUB", 1, x-box_x*floor(x/box_x) + j*dx_tl, \
+                    y, z_pert) )
+                quad_wave_file.write("%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM", n % 100000, ao2, "SUB", 1, x-dx_so()-box_x*floor((x-dx_so())/box_x) + j*dx_tl, \
+                    y, z_pert-dz_so()) )
+                n = n+1
+
+    quad_wave_file.close()
+
+"""
     FUNCTION carve_2D_droplet
     Carves a 2D cylindric droplet out of a sufficienly large fluid cell; the
     function works for water, maybe in future it will see a generalization to
@@ -461,6 +651,70 @@ def carve_2D_droplet(
     droplet_file.close()
     liquid_file.close()
 
+
+"""
+    [...]
+"""
+def carve_rectangle(
+    dist_x,
+    dist_z,
+    input_file_name,
+    output_file_name = 'shear.pdb'
+    ):
+
+    box_x = 0.0
+    box_z = 0.0
+
+    # Dummy
+    n = 0
+
+    # Water molecule
+    n_atom_mol = 3
+    n_count = 0
+
+    liquid_file = open(input_file_name, 'r')
+    droplet_file = open(output_file_name, 'w+')
+
+    line_mol = []
+    for k in range(n_atom_mol) :
+        line_mol.append("")
+
+    # Dummy
+    n_count = 0
+
+    with liquid_file as f :
+        for line in f :
+            cols = line.split()
+            if cols[0] == "CRYST1":
+                box_x = float(cols[1])
+                box_z = float(cols[3])
+                print("Lx = %f, Lz = %f" % (box_x-2.0*dist_x, box_z-2.0*dist_z) )
+                droplet_file.write(line)
+                break
+        for line in f :
+            cols = line.split()
+            if cols[0] == "ATOM" :
+                if cols[3] == "SUB" :
+                    droplet_file.write(line)
+                else :
+                    x = float(line[30:37])
+                    z = float(line[46:53])
+                    line_mol[n_count] = line
+                    if n_count == 0 :
+                        in_rect = (x > dist_x) * ( x <= box_x-dist_x ) \
+                            * (z > dist_z) * ( z <= box_z-dist_z )
+                    else :
+                        in_rect = in_rect * (x > dist_x) * ( x <= box_x-dist_x ) \
+                            * (z > dist_z) * ( z <= box_z-dist_z )
+                    if n_count == (n_atom_mol-1) and in_rect :
+                        for k in range(n_atom_mol) :
+                            droplet_file.write(line_mol[k])
+                            n = n + 1
+                    n_count = ( n_count + 1 ) % n_atom_mol
+        print("n water atoms = %d" % n)
+
+        droplet_file.close()
+        liquid_file.close()
 
 """
     FUNCTION merge_to_substrate

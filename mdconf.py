@@ -32,16 +32,16 @@ def non_null_float( s ) :
 
 def read_gro_line( line ) :
     line_data = [None]*10
-    line_data[0] = int(line[0:5])
-    line_data[1] = str(line[5:10])
-    line_data[2] = str(line[10:15])
-    line_data[3] = int(line[15:20])
-    line_data[4] = float(line[20:28])
-    line_data[5] = float(line[28:36])
-    line_data[6] = float(line[36:44])
-    line_data[7] = non_null_float( line[44:52] )
-    line_data[8] = non_null_float( line[52:60] )
-    line_data[9] = non_null_float( line[60:68] )
+    line_data[0] = int(line[0:5].strip())
+    line_data[1] = str(line[5:10].strip())
+    line_data[2] = str(line[10:15].strip())
+    line_data[3] = int(line[15:20].strip())
+    line_data[4] = float(line[20:28].strip())
+    line_data[5] = float(line[28:36].strip())
+    line_data[6] = float(line[36:44].strip())
+    line_data[7] = non_null_float( line[44:52].strip() )
+    line_data[8] = non_null_float( line[52:60].strip() )
+    line_data[9] = non_null_float( line[60:68].strip() )
     return line_data
 
 def read_box_pdb( file_in, pattern = "CRYST1" ) :
@@ -720,6 +720,55 @@ def carve_rectangle(
 
         droplet_file.close()
         liquid_file.close()
+
+
+"""
+    FUNCTION reset_upper_layer
+    [...]
+"""
+def reset_upper_layer_gro (
+    new_z,
+    delta_z,
+    half_plane,
+    input_file_name,
+    output_file_name = 'reset_bilayer.gro' ):
+
+    # Oxigem distance [nm]
+    d_so = 0.151
+
+    n_lines = count_line( input_file_name )
+
+    input_file = open(input_file_name, 'r')
+    output_file = open(output_file_name, 'w+')
+
+    n = 0
+    with input_file as f :
+        for line in f :
+            n += 1
+            if n <= 2 :
+                output_file.write(line)
+            elif n == n_lines :
+                cols = line.split()
+                output_file.write("%10.5f%10.5f%10.5f\n" % \
+                    ( float(cols[0]), float(cols[1]), new_z+delta_z ) )
+            else :
+                line_data = read_gro_line(line)
+                if line_data[1] == "SOL" or line_data[6] < half_plane:
+                    output_file.write(line)
+                else:
+                    if line_data[2] == "SI":
+                        z = new_z
+                    elif line_data[2] == "O1":
+                        z = new_z+d_so
+                    else :
+                        z = new_z-d_so
+                    output_file.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                        ( line_data[0], line_data[1], line_data[2], line_data[3],
+                            line_data[4], line_data[5], z, line_data[7], line_data[8], line_data[9] ) )
+
+    input_file.close()
+    output_file.close()
+
 
 """
     FUNCTION merge_to_substrate

@@ -769,6 +769,44 @@ def reset_upper_layer_gro (
     input_file.close()
     output_file.close()
 
+"""
+    FUNCTION shift_layers_lambda
+    [...]
+"""
+def shift_layers_lambda (
+    delta_x,
+    half_plane,
+    input_file_name,
+    output_file_name = 'restraints_lambda1.gro' ):
+
+    n_lines = count_line( input_file_name )
+
+    input_file = open(input_file_name, 'r')
+    output_file = open(output_file_name, 'w+')
+
+    n = 0
+    with input_file as f :
+        for line in f :
+            n += 1
+            if n <= 2 or n == n_lines :
+                output_file.write(line)
+            else :
+                line_data = read_gro_line(line)
+                if line_data[1] == "SOL":
+                    output_file.write(line)
+                elif line_data[6] < half_plane:
+                    output_file.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                        ( line_data[0], line_data[1], line_data[2], line_data[3],
+                            line_data[4]-delta_x, line_data[5], line_data[6], line_data[7],
+                            line_data[8], line_data[9] ) )
+                else :
+                    output_file.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                        ( line_data[0], line_data[1], line_data[2], line_data[3],
+                            line_data[4]+delta_x, line_data[5], line_data[6], line_data[7],
+                            line_data[8], line_data[9] ) )
+
+    input_file.close()
+    output_file.close()
 
 """
     FUNCTION merge_to_substrate

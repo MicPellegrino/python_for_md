@@ -1,0 +1,23 @@
+What is going on:
+
+CURRENT WORK DIR:
+/home/michele/python_for_md/Droplet20nmExp/SubstrateSpreading/Q2/Flat
+
+[1]	Need to restart advancing and receding wetting simulations to tackle the
+	problem of different equilibrium contact angles. Is that just a metastability
+	issue? is it something more complex? Let's find out!
+	-> 	Restart sitting and receding simulations for a=1.75 (i.e. w5) and advance for
+		other 5.0 ns (in both cases)
+
+[2]	Try to employ a thermostat s.t. only the substrate is coupled. Try also to reduce the
+	coupling time to around 1.0 ps and see what happens. Can use the w5 configuration as
+	a benchmark.
+	->	What if it does not work? Well, go for artificial precursor film!
+
+[3]	Lambda simulations: maybe not in the spreading droplet case...
+
+IMPORTANT! MDRUN SPECIFICATIONS (PROTOTYPE):
+
+gmx_flow convert-tpr -s system.tpr -o system_ext.tpr -extend 5000.0
+
+mpirun -np 4 gmx_flow mdrun -v -s system.tpr -flow -cpi state.cpt -ntomp 4 -pin on -dlb yes > out.log 2> err.log

@@ -1,0 +1,14 @@
+Apparently, LJ walls won't work (I need to investigate why).
+
+STEP 1:
+	Make a droplet sit on a flat SiO2 substrate with equilibroum contact angle
+	theta = 70deg
+STEP 2:
+	Apply a body force to SOL in order to study the critical stress value for which
+	the droplet starts moving; the angle difference associated at that stess would
+	be the one associated with hysterisi
+
+Body forces values:
+	1) 1.00e-3 nm ps^-2
+	2) 0.75e-3 nm ps^-2
+	3) 1.25e^3 nm ps^-2	(WRONG INITIAL CONDITION!)

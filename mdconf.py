@@ -809,6 +809,56 @@ def shift_layers_lambda (
     output_file.close()
 
 """
+    FUNCTION flip_shear_droplet
+    [...]
+"""
+def flip_shear_droplet (
+    input_file_name,
+    output_file_name = 'restraints_lambda1.gro',
+    residue = 'SOL'
+    ) :
+
+    assert residue=='SOL' or residue=='SUB' or residue=='SYS', "Unrecognized residue name, try again"
+
+    n_lines = count_line( input_file_name )
+
+    input_file = open(input_file_name, 'r')
+    output_file = open(output_file_name, 'w+')
+
+    Lz = 0.0
+
+    n = 0
+    with input_file as f :
+        for line in f :
+            n += 1
+            if n == n_lines :
+                cols = line.split()
+                Lz = float(cols[2])
+
+    # Test
+    print('Lz='+str(Lz))
+
+    input_file = open(input_file_name, 'r')
+
+    n = 0
+    with input_file as f :
+        for line in f :
+            n += 1
+            if n <= 2 or n == n_lines :
+                output_file.write(line)
+            else :
+                line_data = read_gro_line(line)
+                if line_data[1] != residue:
+                    output_file.write(line)
+                else :
+                    output_file.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                        ( line_data[0], line_data[1], line_data[2], line_data[3],
+                            line_data[4], line_data[5], Lz-line_data[6], line_data[7],
+                            line_data[8], line_data[9] ) )
+    input_file.close()
+    output_file.close()
+
+"""
     FUNCTION merge_to_substrate
     Adapt a 2D cylindrical droplet on a given substrate
     NB! This will only work if the droplet y dimension is larger than the one of
@@ -1099,7 +1149,7 @@ def shift_droplet_gro (
             #     line_data[9] = 0.0
             # else :
             #     line_data[9] = float(line_data[9])
-            if line_data[1] == "SUB  " :
+            if line_data[1] == "SUB" :
                 fdo.write(line)
             else :
                 if direction=='x':

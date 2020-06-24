@@ -1,0 +1,17 @@
+Brief files description:
+
+confout_equil.gro	-	-> shear droplet configuration after equilibration (both pressure and temperature)  
+
+energy_minimization.mdp  	-> mdp options utilized for steepest desc. energy minimization
+
+eos_pressure.mdp  	-	-> mdp options utilized for pressure equilibration
+
+eos_temperature.mdp  	-	-> mdp options utilized for temperature equilibration
+
+reset_bilayer_restraint.gro  	-> files with position restraints @lambda=0 (it also contains water molecules, those may be deleted)
+
+shear_droplet_prototype.gro  	-> initial setup after solvate and droplet carving (before s.d. and equilibration)
+
+SilicaCharges, atomtypes.itp  	-> files included in topology.top
+
+topology.top		-	-> topology file for shear droplet configuration

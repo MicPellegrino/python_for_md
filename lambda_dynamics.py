@@ -14,10 +14,10 @@ L_z = 29.0919983        # [nm]
 
 # Velocity PER LAYER (i.e upper or lowe, wrt initial restraints)
 # v_lay = 0.5*v_tot     # [nm/ps]
-v_lay = 10.0e-3      # [nm/ps]
+v_lay = 33.3e-3      # [nm/ps]
 
 # Time step of the simulation
-dt = 0.004              # [ps]
+dt = 0.002              # [ps]
 
 # Time difference between lambda=1 and lambda=0
 Dtime = DL_x/v_lay      # [ps]

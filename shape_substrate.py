@@ -11,17 +11,19 @@ import scipy.special
 gmx = 'gmx20'
 # gmx = 'gmx'
 
+substrates_dir = '/home/michele/python_for_md/Droplet50nmExp/Substrates'
+
 # Roughness factor
 f_rough = lambda a2 : (2.0/pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))
 
 # Periodic images in y direction
-per_y = 2.0
+per_y = 1.0
 
 # Domain lenght
-Lx = 600.0                          # [Å]
+Lx = 1750.0                         # [Å]
 Ly = per_y*46.70                    # [Å]
-Lz = 300.0                          # [Å]
-bf = 200.0                          # [Å]
+Lz = 1000.0                         # [Å]
+bf = 500.0                          # [Å]
 
 # Lattice parameters for silica
 sp = 4.50                           # [Å]
@@ -37,23 +39,23 @@ nk = 1
   ###########################################################
 
 # Parameters defining the space substrate structure
-h = 4.0                             # [Å]
-h_off = 2*h                         # [Å]
+h = 10.0                            # [Å]
+h_off = 8*h                         # [Å]
 w_off = 0.0                         # [Å^-1]
 bend = True
 
 box_y = nj*dy
-box_z = nk*dz+2*h+10.0
+box_z = nk*dz+h_off
 
 # Flat
 ni = int( np.round((Lx+bf)/sp) )
-file_substrate_pdb = '/home/michele/python_for_md/Droplet20nmExp/SubstratesCompleteMap/sub_flat.pdb'
-file_uncut_gro = '/home/michele/python_for_md/Droplet20nmExp/SubstratesCompleteMap/uncut_flat.gro'
+file_substrate_pdb = substrates_dir+'/sub_flat.pdb'
+file_uncut_gro = substrates_dir+'/uncut_flat.gro'
 mdc.quad_substrate(ni, nj, nk, file_substrate_pdb)
 print( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
 os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
 # NB in .gro files units are expressed in nanometers
-file_substrate_gro = '/home/michele/python_for_md/Droplet20nmExp/SubstratesCompleteMap/sub_flat.gro'
+file_substrate_gro = substrates_dir+'/sub_flat.gro'
 mdc.shift_and_resize_gro(-Ly/10, 0.0, 0.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
 
 print('\n### FLAT ###\n')
@@ -64,19 +66,19 @@ print('omega = 0')
 print('lambda = inf')
 
 # Rough
-for idx in range(7) :
-    w_n = (0.25+idx*0.25)*(1.0/h)   # [Å^-1]
+for idx in range(4) :
+    w_n = (0.5+idx*0.5)*(1.0/h)   # [Å^-1]
     a2 = (w_n*h)**2
     r0 = f_rough(a2)
     ni = int( np.round(r0*(Lx+bf)/sp) )
-    file_substrate_pdb = '/home/michele/python_for_md/Droplet20nmExp/SubstratesCompleteMap/sub_lambda'+str(int(idx+1))+'.pdb'
-    file_uncut_gro = '/home/michele/python_for_md/Droplet20nmExp/SubstratesCompleteMap/uncut_lambda'+str(int(idx+1))+'.gro'
+    file_substrate_pdb = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.pdb'
+    file_uncut_gro = substrates_dir+'/uncut_lambda'+str(int(idx+1))+'.gro'
     mdc.quad_substrate_wave(h, h_off, w_n, w_off, bend, ni, nj, nk, file_substrate_pdb)
     print( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
     os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
     # NB in .gro files units are expressed in nanometers
-    file_substrate_gro = '/home/michele/python_for_md/Droplet20nmExp/SubstratesCompleteMap/sub_lambda'+str(int(idx+1))+'.gro'
-    mdc.shift_and_resize_gro(-Ly/10, 0.0, 0.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
+    file_substrate_gro = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.gro'
+    mdc.shift_and_resize_gro(-Ly/10, 0.0, -3.0*h/10.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
 
     print('\n### LAMBDA '+str(idx)+' ###\n')
     print('h = '+str(h))
@@ -90,28 +92,29 @@ for idx in range(7) :
   ###########################################################
 
 # Probing a = 0.25 and a = 0.50
-w_0 = (1.0/h)       # [Å^-1]
+lambda_star = 35.0              # [Å]
+w_0 = 2.0*np.pi/lambda_star     # [Å^-1]
 
 # Flat substrate has already been produced
 # Rough
-for idx in range(7) :
-    a2 = (0.25+idx*0.25)    # [nondim.]
-    h_var = a2/w_0
-    r0 = f_rough(a2)
+for idx in range(4) :
+    a = (0.5+idx*0.5)    # [nondim.]
+    h_var = a/w_0
+    r0 = f_rough(a**2)
     ni = int( np.round(r0*(Lx+bf)/sp) )
-    file_substrate_pdb = '/home/michele/python_for_md/Droplet20nmExp/SubstratesCompleteMap/sub_height'+str(int(idx+1))+'.pdb'
-    file_uncut_gro = '/home/michele/python_for_md/Droplet20nmExp/SubstratesCompleteMap/uncut_height'+str(int(idx+1))+'.gro'
+    file_substrate_pdb = substrates_dir+'/sub_height'+str(int(idx+1))+'.pdb'
+    file_uncut_gro = substrates_dir+'/uncut_height'+str(int(idx+1))+'.gro'
     mdc.quad_substrate_wave(h_var, h_off, w_0, w_off, bend, ni, nj, nk, file_substrate_pdb)
     print( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
     os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
     # NB in .gro files units are expressed in nanometers
-    file_substrate_gro = '/home/michele/python_for_md/Droplet20nmExp/SubstratesCompleteMap/sub_height'+str(int(idx+1))+'.gro'
-    mdc.shift_and_resize_gro(-Ly/10, 0.0, 0.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
+    file_substrate_gro = substrates_dir+'/sub_height'+str(int(idx+1))+'.gro'
+    mdc.shift_and_resize_gro(-Ly/10, 0.0, -3.0*h/10.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
 
     print('\n### HEIGHT '+str(idx)+' ###\n')
     print('h = '+str(h))
     print('r = '+str(r0))
-    print('a = '+str(np.sqrt(a2)))
+    print('a = '+str(a))
     print('omega = '+str(w_n))
     print('lambda = '+str(2*np.pi/w_n))
 

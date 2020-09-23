@@ -1,3 +1,9 @@
+## PYTHON FOR MD ##
+"""
+    Script for carving water droplets out of a single block of SCP/E 
+    pre-equilibrated water
+"""
+
 import os
 from math import ceil
 import mdconf as mdc
@@ -8,7 +14,7 @@ import mdconf as mdc
 # file_water_out = '2dCylDropRoughSub/wat_equil_ext.pdb'
 
 file_water_in = 'wat_equil.pdb'
-file_water_out = 'Droplet20nmExp/water_box_thick.pdb'
+file_water_out = '/home/michele/python_for_md/FreeEnergyCorrugated/water_box_thick.pdb'
 
 # qs = open(file_substrate, 'r')
 we = open(file_water_in, 'r')
@@ -28,9 +34,9 @@ Ly = 46.70      # [Å]
 Lz = 2000.0     # [Å]
 """
 # Medium droplet configuration; longer periodic dimension
-Lx = 600.0000     # [Å]
-Ly = 93.5307      # [Å]
-Lz = 353.7240     # [Å]
+Lx = 750.000        # [Å]
+Ly = 23.3830        # [Å]
+Lz = 353.7240       # [Å]
 
 nx = int( ceil( Lx/float(line1_we[1]) ) )
 ny = int( ceil( Ly/float(line1_we[2]) ) )
@@ -41,7 +47,7 @@ we.close()
 
 os.system("gmx20 genconf -f "+file_water_in+" -o "+file_water_out+" -nbox %.3f %.3f %.3f" % (nx, ny, nz))
 
-file_droplet = 'Droplet20nmExp/water_droplet_thick.pdb'
+file_droplet = '/home/michele/python_for_md/FreeEnergyCorrugated/water_droplet.pdb'
 
 radius = 100.0      #[Å]
 radius_factor = 2.0*radius/Lz

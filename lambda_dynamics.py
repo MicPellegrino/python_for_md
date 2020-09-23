@@ -7,14 +7,15 @@ DL_x = 1.0              # [nm]
 # gamma = 1.0e-3/48.0   # [ps^-1]
 
 # Distance between bilayers
-L_z = 29.0919983        # [nm]
+# L_z = 29.0919983          # [nm]
+L_z = 2.3299999-0.385000    # [nm]
 
 # Total velocity (upper-lower)
 # v_tot = gamma*L_z     # [nm/ps]
 
 # Velocity PER LAYER (i.e upper or lowe, wrt initial restraints)
 # v_lay = 0.5*v_tot     # [nm/ps]
-v_lay = 33.3e-3      # [nm/ps]
+v_lay = 3.33e-3         # [nm/ps]
 
 # Time step of the simulation
 dt = 0.002              # [ps]

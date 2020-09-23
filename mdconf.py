@@ -6,6 +6,9 @@ from math import floor
 import numpy as np
 import matplotlib.pyplot as plt
 
+# MACRO DEFINITION:
+PBC_QUAD = False
+
 """
     Library for creating and manipulating MD configurations (reference: GROMACS)
     (1) MAKE THIS MORE OBJECT-ORIENTED!
@@ -426,8 +429,12 @@ def quad_substrate_wave (
 
     quad_wave_file = open(file_name, 'w')
 
-    box_x = ni*dx
     box_y = nj*dy
+
+    if PBC_QUAD == True :
+        box_x = ni*dx
+    else :
+        box_x = ni*dx + box_y
     box_z = nk*dz+z0+amplitude_offset+amplitude
     quad_wave_file.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
        (box_x,box_y,box_z,90.0,90.0,90.0) );
@@ -733,7 +740,7 @@ def reset_upper_layer_gro (
     input_file_name,
     output_file_name = 'reset_bilayer.gro' ):
 
-    # Oxigem distance [nm]
+    # Oxigen distance [nm]
     d_so = 0.151
 
     n_lines = count_line( input_file_name )
@@ -770,8 +777,51 @@ def reset_upper_layer_gro (
     output_file.close()
 
 """
+    FUNCTION reset_layers_gro
+    Given a configuration with groups 'SOL' and 'SUB', it shifts the atoms of 'SUB' by delta_z in the z direction
+    such that the upper layer goes +delta_z and the lower layer goes -delta_z (used for controllong depletion layer)
+"""
+def reset_layers_gro (
+    delta_z,
+    half_plane,
+    input_file_name,
+    output_file_name = 'reset_bilayer.gro'
+    ) :
+
+    n_lines = count_line( input_file_name )
+
+    input_file = open(input_file_name, 'r')
+    output_file = open(output_file_name, 'w+')
+
+    n = 0
+    with input_file as f :
+        for line in f :
+            n += 1
+            if n <= 2 or n == n_lines :
+                output_file.write(line)
+            else :
+                line_data = read_gro_line(line)
+                if line_data[1] == "SOL":
+                    output_file.write(line)
+                elif line_data[6] < half_plane:
+                    output_file.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                        ( line_data[0], line_data[1], line_data[2], line_data[3],
+                            line_data[4], line_data[5], line_data[6]-delta_z, line_data[7],
+                            line_data[8], line_data[9] ) )
+                else :
+                    output_file.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                        ( line_data[0], line_data[1], line_data[2], line_data[3],
+                            line_data[4], line_data[5], line_data[6]+delta_z, line_data[7],
+                            line_data[8], line_data[9] ) )
+
+    input_file.close()
+    output_file.close()
+
+
+"""
     FUNCTION shift_layers_lambda
-    [...]
+    Given a configuration with groups 'SOL' and 'SUB', it shifts the atoms of 'SUB' by delta_x
+    such that the upper layer goes +delta_x and the lower layer goes -delta_x (used for shear simulations)
 """
 def shift_layers_lambda (
     delta_x,
@@ -1198,7 +1248,7 @@ def shift_droplet_gro (
 
 
 """
-    FUNCTION add_atoms_topology
+    FUNCTION  add_atoms_topology
     Add number of residues from the prescribed .pdb file to the prescribed
     topology file
 """
@@ -1390,6 +1440,80 @@ def shift_and_resize_gro (
         f_out.write(" "+str(n_atoms)+"\n")
         f_out.close()
 
+
+"""
+    FUNCTION shift_resize_discrete
+    Same function as above, but it considers discrete substate positions
+    for cutting the substrate (avoids creating nanodefects)
+"""
+def shift_resize_discrete (
+        delta_x,
+        delta_y,
+        delta_z,
+        new_box_x,
+        new_box_y,
+        new_box_z,
+        input_file,
+        output_file = 'shf_res_conf.gro'
+        ) :
+
+        dx = 0.450  # [nm]
+        N_delta = np.floor(delta_x/dx)
+        delta_x_1 = N_delta*dx
+        N_box = np.ceil(new_box_x/dx)
+        new_box_x_1 = N_box*dx
+
+        n_lines = count_line( input_file )
+
+        f_in = open( input_file, 'r' )
+        f_out = open( output_file, 'w' )
+
+        # This is NOT the way to go: the number of atoms per molecules should be variable!
+        n_atoms_mol = 3
+        mol_line = ['', '', '']
+
+        idx = 0
+        n_atoms = 0
+        mol_count = 0
+        header = ''
+        # This cannot work! I need to carve molecules, not atoms (change)!
+        for line in f_in :
+            idx += 1
+            if idx > 2 and idx < n_lines :
+                if mol_count == 0 :
+                    ins = True
+                line_data = read_gro_line( line )
+                line_data[4] += delta_x_1
+                line_data[5] += delta_y
+                line_data[6] += delta_z
+                inx = ( line_data[4] > 0 and line_data[4] <= new_box_x_1 )
+                iny = ( line_data[5] > 0 and line_data[5] <= new_box_y )
+                inz = ( line_data[6] > 0 and line_data[6] <= new_box_z )
+                ins = inx and iny and inz and ins
+                mol_line[mol_count] = "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" % ( line_data[0],
+                        line_data[1], line_data[2], line_data[3], line_data[4], line_data[5], line_data[6],
+                            line_data[7], line_data[8], line_data[9] )
+                if ( mol_count == 2 and ins ) :
+                    n_atoms += n_atoms_mol
+                    f_out.write( mol_line[0] )
+                    f_out.write( mol_line[1] )
+                    f_out.write( mol_line[2] )
+                mol_count = (mol_count+1)%n_atoms_mol
+            elif idx == n_lines :
+                f_out.write("%10.5f%10.5f%10.5f\n" % ( new_box_x_1, new_box_y, new_box_z ) )
+            elif idx == 1 :
+                header = line
+                f_out.write(line)
+            else :
+                f_out.write(line)
+
+        f_out.close()
+        f_in.close()
+
+        f_out = open( output_file, 'r+')
+        f_out.write(header)
+        f_out.write(" "+str(n_atoms)+"\n")
+        f_out.close()
 
 """
     FUNCTION initial_velocity_gro

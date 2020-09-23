@@ -1,3 +1,9 @@
+## PYTHON FOR MD ##
+"""
+    Script for the creation of a simple LJ substrate carved according to a 
+    fractal structure function
+"""
+
 import mdconf as mdc
 from math import sqrt
 

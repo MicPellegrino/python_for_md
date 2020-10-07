@@ -51,7 +51,9 @@ class weierstrass_mandelbrot :
     def evaluate_2D_vec ( self, x, y ) :
         self.eval_h = np.zeros( shape=(len(x),len(y)) )
         for n in self.frequencies :
-            self.eval_h += (self.mode_base**(n*(self.fractal_dim-3))) * np.outer( np.cos( (x + self.offset_x) * (self.frequencies[n]) ), np.cos( (y + self.offset_y) * (self.frequencies[n]) ) )
+            self.eval_h += (self.mode_base**(n*(self.fractal_dim-3))) * np.outer( np.cos( (x + self.offset_x) * 
+            (self.frequencies[n]) ), np.cos( (y + self.offset_y) * (self.frequencies[n]) ) )
+        
         # ANSATZ?
         self.eval_h *= (self.scale)**(self.fractal_dim-2)
         self.eval_x = x
@@ -62,5 +64,14 @@ class weierstrass_mandelbrot :
         for n in self.frequencies :
             h += (self.mode_base**(n*(self.fractal_dim-2))) * np.cos( (x + self.offset_x) * (self.frequencies[n]) )
         h *= (self.scale)**(self.fractal_dim-1)
+        h += self.offset_h
+        return h
+
+    def evaluate_2D ( self, x, y ) :
+        h = 0
+        for n in self.frequencies :
+            h += (self.mode_base**(n*(self.fractal_dim-3))) * np.outer( np.cos( (x + self.offset_x) * 
+            (self.frequencies[n]) ), np.cos( (y + self.offset_y) * (self.frequencies[n]) ) )
+        h *= (self.scale)**(self.fractal_dim-2)
         h += self.offset_h
         return h

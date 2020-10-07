@@ -6,6 +6,9 @@ from math import floor
 import numpy as np
 import matplotlib.pyplot as plt
 
+# MACRO DEFINITION:
+PBC_QUAD = False
+
 """
     Library for creating and manipulating MD configurations (reference: GROMACS)
     (1) MAKE THIS MORE OBJECT-ORIENTED!
@@ -426,8 +429,11 @@ def quad_substrate_wave (
 
     quad_wave_file = open(file_name, 'w')
 
-    box_x = ni*dx
     box_y = nj*dy
+    if PBC_QUAD == True :
+        box_x = ni*dx
+    else :
+        box_x = ni*dx + box_y
     box_z = nk*dz+z0+amplitude_offset+amplitude
     quad_wave_file.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
        (box_x,box_y,box_z,90.0,90.0,90.0) );
@@ -983,7 +989,7 @@ def merge_to_substrate_gro (
 
     header = "Merged system\n"
     sys.write(header)
-    sys.write("            \n")
+    sys.write("                               \n")
 
     n_atoms = 0
 
@@ -1505,6 +1511,20 @@ class monatomic_crystal_substrate :
         z_new = []
         for n in range(self.n_atoms) :
             if self.z_coord[n] < fun(self.x_coord[n]) :
+                x_new.append(self.x_coord[n])
+                y_new.append(self.y_coord[n])
+                z_new.append(self.z_coord[n])
+        self.x_coord = np.array(x_new)
+        self.y_coord = np.array(y_new)
+        self.z_coord = np.array(z_new)
+        self.n_atoms = self.x_coord.size
+
+    def carve_2d_function ( self, fun ) :
+        x_new = []
+        y_new = []
+        z_new = []
+        for n in range(self.n_atoms) :
+            if self.z_coord[n] < fun(self.x_coord[n], self.y_coord[n]) :
                 x_new.append(self.x_coord[n])
                 y_new.append(self.y_coord[n])
                 z_new.append(self.z_coord[n])

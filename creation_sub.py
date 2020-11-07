@@ -1,3 +1,8 @@
+### PYTHON FOR MD ###
+"""
+    OLD script for creating substrates
+"""
+
 import mdconf as mdc
 import os
 import numpy as np

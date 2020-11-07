@@ -1,3 +1,8 @@
+### PYTHON FOR MD ###
+"""
+    VERY OLD script for creating the substrate + droplet system
+"""
+
 import os
 from math import ceil
 import mdconf as mdc

@@ -1,3 +1,9 @@
+### PYTHON FOR MD ###
+"""
+    Current script for creating corrugated substartes
+    (uncomment some parts!)
+"""
+
 import os
 import mdconf as mdc
 import numpy as np
@@ -8,10 +14,12 @@ import scipy as sc
 import scipy.special
 
 # GROMACS version
-gmx = 'gmx20'
-# gmx = 'gmx'
+# gmx = 'gmx20'
+gmx = 'gmx'
 
-substrates_dir = '/home/michele/python_for_md/Droplet50nmExp/Substrates'
+# substrates_dir = '/home/michele/python_for_md/Droplet50nmExp/Substrates'
+# substrates_dir = '/home/michele/python_for_md/FreeEnergyCorrugated'
+substrates_dir = '/home/michele/python_for_md/TestSub'
 
 # Roughness factor
 f_rough = lambda a2 : (2.0/pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))
@@ -20,10 +28,12 @@ f_rough = lambda a2 : (2.0/pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0)
 per_y = 1.0
 
 # Domain lenght
-Lx = 1750.0                         # [Å]
+# Lx = 1750.0                       # [Å]
+Lx = 100.0                      
 Ly = per_y*46.70                    # [Å]
-Lz = 1000.0                         # [Å]
-bf = 500.0                          # [Å]
+# Lz = 1000.0                       # [Å]
+Lz = 100.0
+# bf = 500.0                        # [Å]
 
 # Lattice parameters for silica
 sp = 4.50                           # [Å]
@@ -48,7 +58,8 @@ box_y = nj*dy
 box_z = nk*dz+h_off
 
 # Flat
-ni = int( np.round((Lx+bf)/sp) )
+# ni = int( np.round((Lx+bf)/sp) )
+ni = int( np.round(Lx/sp) )
 file_substrate_pdb = substrates_dir+'/sub_flat.pdb'
 file_uncut_gro = substrates_dir+'/uncut_flat.gro'
 mdc.quad_substrate(ni, nj, nk, file_substrate_pdb)
@@ -59,7 +70,7 @@ file_substrate_gro = substrates_dir+'/sub_flat.gro'
 mdc.shift_and_resize_gro(-Ly/10, 0.0, 0.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
 
 print('\n### FLAT ###\n')
-print('h = '+str(h))
+print('h = '+str(0))
 print('r = '+str(1))
 print('a = '+str(0))
 print('omega = 0')
@@ -70,7 +81,7 @@ for idx in range(4) :
     w_n = (0.5+idx*0.5)*(1.0/h)   # [Å^-1]
     a2 = (w_n*h)**2
     r0 = f_rough(a2)
-    ni = int( np.round(r0*(Lx+bf)/sp) )
+    # ni = int( np.round(r0*(Lx+bf)/sp) )
     file_substrate_pdb = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.pdb'
     file_uncut_gro = substrates_dir+'/uncut_lambda'+str(int(idx+1))+'.gro'
     mdc.quad_substrate_wave(h, h_off, w_n, w_off, bend, ni, nj, nk, file_substrate_pdb)
@@ -79,8 +90,7 @@ for idx in range(4) :
     # NB in .gro files units are expressed in nanometers
     file_substrate_gro = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.gro'
     mdc.shift_and_resize_gro(-Ly/10, 0.0, -3.0*h/10.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
-
-    print('\n### LAMBDA '+str(idx)+' ###\n')
+    print('\n### LAMBDA '+str(idx+1)+' ###\n')
     print('h = '+str(h))
     print('r = '+str(r0))
     print('a = '+str(np.sqrt(a2)))
@@ -101,7 +111,7 @@ for idx in range(4) :
     a = (0.5+idx*0.5)    # [nondim.]
     h_var = a/w_0
     r0 = f_rough(a**2)
-    ni = int( np.round(r0*(Lx+bf)/sp) )
+    # ni = int( np.round(r0*(Lx+bf)/sp) )
     file_substrate_pdb = substrates_dir+'/sub_height'+str(int(idx+1))+'.pdb'
     file_uncut_gro = substrates_dir+'/uncut_height'+str(int(idx+1))+'.gro'
     mdc.quad_substrate_wave(h_var, h_off, w_0, w_off, bend, ni, nj, nk, file_substrate_pdb)
@@ -111,11 +121,11 @@ for idx in range(4) :
     file_substrate_gro = substrates_dir+'/sub_height'+str(int(idx+1))+'.gro'
     mdc.shift_and_resize_gro(-Ly/10, 0.0, -3.0*h/10.0, Lx/10, box_y/10, box_z/10, file_uncut_gro, file_substrate_gro)
 
-    print('\n### HEIGHT '+str(idx)+' ###\n')
-    print('h = '+str(h))
+    print('\n### HEIGHT '+str(idx+1)+' ###\n')
+    print('h = '+str(h_var))
     print('r = '+str(r0))
     print('a = '+str(a))
-    print('omega = '+str(w_n))
+    print('omega = '+str(w_0))
     print('lambda = '+str(2*np.pi/w_n))
 
 """

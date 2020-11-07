@@ -13,7 +13,11 @@ import scipy as sc
 import scipy.special
 
 # GROMACS version
+<<<<<<< HEAD
 gmx = 'gmx'
+=======
+gmx = 'gmx20'
+>>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
 
 substrates_dir = '/home/michele/python_for_md/FreeEnergyCorrugated'
 
@@ -21,9 +25,16 @@ substrates_dir = '/home/michele/python_for_md/FreeEnergyCorrugated'
 f_rough = lambda a2 : (2.0/pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))
 
 # Domain lenght
+<<<<<<< HEAD
 Lx = 250.0              # [Å]
 Ly = 46.70              # [Å]
 Lz = 100.0              # [Å]
+=======
+Lx = 750.000            # [Å]
+# Ly = 46.70            # [Å]
+Ly = 23.3830            # [Å]
+Lz = 100.724            # [Å]
+>>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
 
 # Lattice parameters for silica
 sp = 4.50               # [Å]
@@ -40,27 +51,50 @@ h_off = 3*h                         # [Å]
 w_off = 0.0                         # [Å^-1]
 
 file_substrate_pdb = substrates_dir+'/sub_flat.pdb'
+<<<<<<< HEAD
 file_substrate_gro = substrates_dir+'/sub_flat.gro'
 mdc.quad_substrate_wave(0.0, h_off, 0.0, w_off, False, ni, nj, nk, file_substrate_pdb)
 os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_substrate_gro)
 
 bend = True
 
+=======
+# mdc.quad_substrate(ni, nj, nk, file_substrate_pdb)
+mdc.quad_substrate_wave(0.0, h_off, 0.0, w_off, False, ni, nj, nk, file_substrate_pdb)
+
+bend = True
+
+max_box_y = nj*dy/10
+max_box_x = ni*sp/10 + max_box_y
+max_box_z = 0.0
+
+>>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
 # Rough
 for idx in range(4) :
     w_n = (0.5+idx*0.5)*(1.0/h)   # [Å^-1]
     a2 = (w_n*h)**2
     r0 = f_rough(a2)
     file_substrate_pdb = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.pdb'
+<<<<<<< HEAD
     file_substrate_gro = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.gro'
     mdc.quad_substrate_wave(h, h_off, w_n, w_off, bend, ni, nj, nk, file_substrate_pdb)
     os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_substrate_gro )
+=======
+    # file_substrate_gro = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.gro'
+    mdc.quad_substrate_wave(h, h_off, w_n, w_off, bend, ni, nj, nk, file_substrate_pdb)
+    # os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_substrate_gro )
+    max_box_z = max( max_box_z, (nk*dz+3.0+h_off+h)/10 )
+>>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
 
 # Probing a = 0.25 and a = 0.50
 lambda_star = 35.0              # [Å]
 w_0 = 2.0*np.pi/lambda_star     # [Å^-1]
 
 # Flat substrate has already been produced
+<<<<<<< HEAD
+=======
+
+>>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
 # Rough
 for idx in range(4) :
     a = (0.5+idx*0.5)    # [nondim.]
@@ -68,6 +102,32 @@ for idx in range(4) :
     r0 = f_rough(a**2)
     # ni = int( np.round(r0*(Lx+bf)/sp) )
     file_substrate_pdb = substrates_dir+'/sub_height'+str(int(idx+1))+'.pdb'
+<<<<<<< HEAD
     file_substrate_gro = substrates_dir+'/sub_height'+str(int(idx+1))+'.gro'
     mdc.quad_substrate_wave(h_var, h_off, w_0, w_off, bend, ni, nj, nk, file_substrate_pdb)
     os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_substrate_gro )
+=======
+    # file_substrate_gro = substrates_dir+'/sub_height'+str(int(idx+1))+'.gro'
+    mdc.quad_substrate_wave(h_var, h_off, w_0, w_off, bend, ni, nj, nk, file_substrate_pdb)
+    # os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_substrate_gro )
+    max_box_z = max( max_box_z, (nk*dz+3.0+h_off+h)/10 )
+
+# Producing the .gro files
+
+# Flat
+file_substrate_pdb = substrates_dir+'/sub_flat.pdb'
+file_substrate_gro = substrates_dir+'/sub_flat.gro'
+os.system( gmx+" editconf -c -f " + file_substrate_pdb + " -o " + file_substrate_gro + " -box " + str(max_box_x) + " " + str(max_box_y) + " " + str(max_box_z) )
+
+# Lambda
+for idx in range(4) :
+    file_substrate_pdb = substrates_dir+'/sub_height'+str(int(idx+1))+'.pdb'
+    file_substrate_gro = substrates_dir+'/sub_height'+str(int(idx+1))+'.gro'
+    os.system( gmx+" editconf -c -f " + file_substrate_pdb + " -o " + file_substrate_gro + " -box " + str(max_box_x) + " " + str(max_box_y) + " " + str(max_box_z) )
+
+# Height
+for idx in range(4) :
+    file_substrate_pdb = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.pdb'
+    file_substrate_gro = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.gro'
+    os.system( gmx+" editconf -c -f " + file_substrate_pdb + " -o " + file_substrate_gro + " -box " + str(max_box_x) + " " + str(max_box_y) + " " + str(max_box_z) )
+>>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660

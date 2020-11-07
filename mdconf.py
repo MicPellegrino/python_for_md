@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 # MACRO DEFINITION:
 PBC_QUAD = False
+# PBC_QUAD = True
 
 """
     Library for creating and manipulating MD configurations (reference: GROMACS)
@@ -141,6 +142,65 @@ def lj_substrate (
                 x = x0 + i*dx + j*dx_y + k*dx_z
                 lj_file.write( "%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
                     ("ATOM",n % 100000,a,"SUB",1,wrap(x,box_x),wrap(y,box_y),wrap(z,box_z)) )
+                n = n+1
+
+    lj_file.close()
+
+"""
+    FUNCTION ...
+"""
+def lj_double_layer(
+    dist,
+    ni = 10,
+    nj = 10,
+    nk = 3,
+    file_name = 'lj_double_layer.pdb' ) :
+
+    sp = 2.7
+    alpha_1 = sqrt(3.0/4.0)
+    alpha_2 = sqrt(2.0/3.0)
+    
+    dx = sp
+    dy = sp*alpha_1
+    dz = sp*alpha_2
+
+    lj_file = open(file_name, 'w')
+
+    box_x = ni*dx
+    box_y = nj*dy
+    # box_z = nk*dz
+    box_z = 2.0*(nk*dz) + dist
+    lj_file.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
+       (box_x,box_y,box_z,90.0,90.0,90.0) );
+
+    dx_y = dx/2;
+    dx_z = dx/2;
+    dy_z = dy/3;
+    x0 = dx/4;
+    y0 = dy/6;
+    z0 = dz/2;
+
+    wrap = lambda t, bt : t-bt*floor(t/bt)
+
+    n = 1;
+    for k in range(nk):
+        # Distinguish between bulk and substrate
+        # if k < nk-1 :
+        #     a = "CUB"
+        # else:
+        #     a = "CUS"
+        a = "CUB"
+        z = z0 + k*dz
+        for i in range(ni):
+            for j in range(nj):
+                y = y0 + j*dy + k*dy_z
+                x = x0 + i*dx + j*dx_y + k*dx_z
+                # Bottom layer
+                lj_file.write( "%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM",n % 100000,a,"SUB",1,wrap(x,box_x),wrap(y,box_y),wrap(z,box_z)) )
+                # Top layer
+                lj_file.write( "%-6s%5d  %-3s%4s %5d    %8.3f%8.3f%8.3f\n" %
+                    ("ATOM",n % 100000,a,"SUB",1,wrap(x,box_x),wrap(y,box_y),wrap(box_z-z,box_z)) )
                 n = n+1
 
     lj_file.close()
@@ -1400,8 +1460,7 @@ def shift_and_resize_gro (
         idx = 0
         n_atoms = 0
         mol_count = 0
-        header = ''
-        # This cannot work! I need to carve molecules, not atoms (change)!
+        header = '' 
         for line in f_in :
             idx += 1
             if idx > 2 and idx < n_lines :

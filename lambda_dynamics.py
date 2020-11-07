@@ -8,12 +8,18 @@ DL_x = 0.5              # [nm]
 
 # Distance between bilayers
 <<<<<<< HEAD
+<<<<<<< HEAD
 # L_z = 29.0919983        # [nm]
 L_z = 9.933             # [nm]
 =======
 # L_z = 29.0919983          # [nm]
 L_z = 2.3299999-0.385000    # [nm]
 >>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
+=======
+L_z = 29.0919983          # [nm]
+# L_z = 2.3299999-0.385000    # [nm]
+# L_z = 50.0
+>>>>>>> d539aed3ad013b3023661f1d43045f8e4ea15547
 
 # Total velocity (upper-lower)
 # v_tot = gamma*L_z     # [nm/ps]

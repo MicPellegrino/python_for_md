@@ -19,7 +19,7 @@ gmx = 'gmx'
 gmx = 'gmx20'
 >>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
 
-substrates_dir = '/home/michele/python_for_md/FreeEnergyCorrugated'
+substrates_dir = '/home/michele/python_for_md/TestSub'
 
 # Roughness factor
 f_rough = lambda a2 : (2.0/pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))

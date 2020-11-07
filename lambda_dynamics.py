@@ -7,8 +7,9 @@ DL_x = 1.0              # [nm]
 # gamma = 1.0e-3/48.0   # [ps^-1]
 
 # Distance between bilayers
-# L_z = 29.0919983          # [nm]
-L_z = 2.3299999-0.385000    # [nm]
+L_z = 29.0919983          # [nm]
+# L_z = 2.3299999-0.385000    # [nm]
+# L_z = 50.0
 
 # Total velocity (upper-lower)
 # v_tot = gamma*L_z     # [nm/ps]

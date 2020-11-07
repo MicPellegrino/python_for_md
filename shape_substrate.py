@@ -14,11 +14,12 @@ import scipy as sc
 import scipy.special
 
 # GROMACS version
-gmx = 'gmx20'
+gmx = 'gmx_flow'
 # gmx = 'gmx'
 
 # substrates_dir = '/home/michele/python_for_md/Droplet50nmExp/Substrates'
-substrates_dir = '/home/michele/python_for_md/FreeEnergyCorrugated'
+# substrates_dir = '/home/michele/python_for_md/FreeEnergyCorrugated'
+substrates_dir = '/home/michele/python_for_md/TestSub'
 
 # Roughness factor
 f_rough = lambda a2 : (2.0/pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))
@@ -100,6 +101,8 @@ for idx in range(4) :
  ### CASE 2: fixing substrate wavelenght and change height ###
   ###########################################################
 
+"""
+
 # Probing a = 0.25 and a = 0.50
 lambda_star = 35.0              # [Å]
 w_0 = 2.0*np.pi/lambda_star     # [Å^-1]
@@ -127,9 +130,12 @@ for idx in range(4) :
     print('omega = '+str(w_0))
     print('lambda = '+str(2*np.pi/w_n))
 
+
 """
-    OLD STUFF
-"""
+
+#############
+# OLD STUFF #
+#############
 
 """
 a2 = 0.50

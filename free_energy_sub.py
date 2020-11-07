@@ -15,7 +15,7 @@ import scipy.special
 # GROMACS version
 gmx = 'gmx20'
 
-substrates_dir = '/home/michele/python_for_md/FreeEnergyCorrugated'
+substrates_dir = '/home/michele/python_for_md/TestSub'
 
 # Roughness factor
 f_rough = lambda a2 : (2.0/pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))

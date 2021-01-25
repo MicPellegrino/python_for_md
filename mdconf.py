@@ -318,7 +318,8 @@ def quad_double_layer (
     ni = 10,
     nj = 10,
     nk = 1,
-    file_name = 'quad_double_layer.pdb' ):
+    file_name = 'quad_double_layer.pdb',
+    sep = 0):
 
     # Lattice parameters
     sp = 4.50
@@ -353,7 +354,10 @@ def quad_double_layer (
 
     box_x = ni*dx
     box_y = nj*dy
-    box_z = 2.0*(nk*dz) + dist
+    if sep == 0 :
+        box_z = 2.0*(nk*dz) + dist
+    else :
+        box_z = 2.0*sep + dist
     quad_file.write( "CRYST1%9.3f%9.3f%9.3f%7.2f%7.2f%7.2f P 1           1\n" %
        (box_x,box_y,box_z,90.0,90.0,90.0) )
 
@@ -913,6 +917,42 @@ def shift_layers_lambda (
                     output_file.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
                         ( line_data[0], line_data[1], line_data[2], line_data[3],
                             line_data[4]+delta_x, line_data[5], line_data[6], line_data[7],
+                            line_data[8], line_data[9] ) )
+
+    input_file.close()
+    output_file.close()
+
+def adjust_layers (
+    delta_x_upp,
+    delta_x_low,
+    half_plane,
+    input_file_name,
+    output_file_name = 'restraints_lambda1_adj.gro' ):
+
+    n_lines = count_line( input_file_name )
+
+    input_file = open(input_file_name, 'r')
+    output_file = open(output_file_name, 'w+')
+
+    n = 0
+    with input_file as f :
+        for line in f :
+            n += 1
+            if n <= 2 or n == n_lines :
+                output_file.write(line)
+            else :
+                line_data = read_gro_line(line)
+                if line_data[1] == "SOL":
+                    output_file.write(line)
+                elif line_data[6] < half_plane:
+                    output_file.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                        ( line_data[0], line_data[1], line_data[2], line_data[3],
+                            line_data[4]+delta_x_upp, line_data[5], line_data[6], line_data[7],
+                            line_data[8], line_data[9] ) )
+                else :
+                    output_file.write("%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" %
+                        ( line_data[0], line_data[1], line_data[2], line_data[3],
+                            line_data[4]+delta_x_low, line_data[5], line_data[6], line_data[7],
                             line_data[8], line_data[9] ) )
 
     input_file.close()
@@ -1496,7 +1536,7 @@ def shift_and_resize_gro (
 
         f_out = open( output_file, 'r+')
         f_out.write(header)
-        f_out.write(" "+str(n_atoms)+"\n")
+        f_out.write(" "+str(n_atoms)+"\t")
         f_out.close()
 
 
@@ -1571,8 +1611,66 @@ def shift_resize_discrete (
 
         f_out = open( output_file, 'r+')
         f_out.write(header)
-        f_out.write(" "+str(n_atoms)+"\n")
+        f_out.write(" "+str(n_atoms)+"\t")
         f_out.close()
+
+
+def crop_xyz (
+    x0, y0, z0,
+    x1, y1, z1,
+    input_file,
+    output_file = 'crop.gro'
+    ) :
+    
+    assert x1-x0>0 and y1-y0>0 and z1-z0>0, "Input error: negative box length"
+
+    n_lines = count_line( input_file )
+    f_in = open( input_file, 'r' )
+    f_out = open( output_file, 'w' )
+
+    n_atoms_mol = 3
+    mol_line = ['', '', '']
+
+    idx = 0
+    n_atoms = 0
+    mol_count = 0
+    header = " "
+    for line in f_in :
+        idx += 1
+        if idx > 2 and idx < n_lines :
+            if mol_count == 0 :
+                ins = True
+            line_data = read_gro_line( line )
+            inx = ( line_data[4] > x0 and line_data[4] <= x1 )
+            iny = ( line_data[5] > y0 and line_data[5] <= y1 )
+            inz = ( line_data[6] > z0 and line_data[6] <= z1 )
+            ins = inx and iny and inz and ins
+            mol_line[mol_count] = "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" % ( line_data[0],
+                line_data[1], line_data[2], line_data[3], 
+                line_data[4]-x0, line_data[5]-y0, line_data[6]-z0,
+                line_data[7], line_data[8], line_data[9] )
+            if ( mol_count == 2 and ins ) :
+                n_atoms += n_atoms_mol
+                f_out.write( mol_line[0] )
+                f_out.write( mol_line[1] )
+                f_out.write( mol_line[2] )
+            mol_count = (mol_count+1)%n_atoms_mol
+        elif idx == n_lines :
+            f_out.write("%10.5f%10.5f%10.5f\n" % ( x1-x0, y1-y0, z1-z0 ) )
+        elif idx == 1 :
+            header = line
+            f_out.write(line)
+        else :
+            f_out.write(line)
+
+    f_out.close()
+    f_in.close()
+
+    f_out = open( output_file, 'r+')
+    f_out.write(header)
+    f_out.write(" "+str(n_atoms)+"\t")
+    f_out.close()
+
 
 """
     FUNCTION initial_velocity_gro

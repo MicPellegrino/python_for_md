@@ -11,7 +11,8 @@ N.append( md.count_line(file_name0) )
 N.append( md.count_line(file_name1) )
 
 # From inpput file
-half_plane = 0.5*30.36600;
+half_plane = 0.5*30.36600
+z_restrain = 0.366
 
 input_file = []
 input_file.append( open(file_name0, 'r') )
@@ -26,6 +27,7 @@ for idx in range(2) :
     n = 0
     silica_x = []
     silica_y = []
+    silica_z = []
     oxigen1_x = []
     oxigen1_y = []
     oxigen1_z = []
@@ -40,6 +42,7 @@ for idx in range(2) :
                 if line_data[2] == "SI" :
                     silica_x.append(line_data[4])
                     silica_y.append(line_data[5])
+                    silica_z.append(line_data[6])
                 if line_data[2] == "O1" :
                     oxigen1_x.append(line_data[4])
                     oxigen1_y.append(line_data[5])
@@ -54,6 +57,7 @@ for idx in range(2) :
 
     silica_x = np.array(silica_x)
     silica_y = np.array(silica_y)
+    silica_z = np.array(silica_z)
     oxigen1_x = np.array(oxigen1_x)
     oxigen1_y = np.array(oxigen1_y)
     oxigen1_z = np.array(oxigen1_z)
@@ -61,21 +65,19 @@ for idx in range(2) :
     oxigen2_y = np.array(oxigen2_y) 
     oxigen2_z = np.array(oxigen2_z)
 
-    diff_z = oxigen1_z-oxigen2_z
-    norm = np.sqrt( (oxigen1_x-oxigen2_x)**2 + (oxigen1_y-oxigen2_y)**2 + (oxigen1_z-oxigen2_z)**2 )
-    theta = np.arccos( diff_z/norm )
+    shift_z = silica_z - z_restrain
     
     ax = axes.flat[idx]
-    im = ax.scatter(silica_x, silica_y, c=theta, vmin=0.0, vmax=1.5 ,cmap=cm.jet, s=5.0)
+    im = ax.scatter(silica_x, silica_y, c=shift_z, vmin=0.000, vmax=0.175, cmap=cm.jet, s=5.0)
     ax.set_xlim([min(silica_x), max(silica_x)])
     ax.set_ylim([min(silica_y), max(silica_y)])
     ax.set_aspect('equal', adjustable='box')
     ax.set_xlabel('x [nm]', fontsize=15.0)
     ax.set_ylabel('y [nm]', fontsize=15.0)
     if idx == 0 :
-        ax.set_title('Orient [deg], wall interactions', fontsize=15.0)
+        ax.set_title('Shift [nm], wall interactions', fontsize=15.0)
     else :
-        ax.set_title('Orient [deg], no wall interactions', fontsize=15.0)
+        ax.set_title('Shift [nm], no wall interactions', fontsize=15.0)
 
 fig.subplots_adjust(right=0.8)
 cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])

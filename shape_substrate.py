@@ -13,34 +13,22 @@ from math import pi
 import scipy as sc
 import scipy.special
 
-# GROMACS version
-<<<<<<< HEAD
-# gmx = 'gmx20'
 gmx = 'gmx'
-=======
-gmx = 'gmx_flow'
-# gmx = 'gmx'
->>>>>>> d539aed3ad013b3023661f1d43045f8e4ea15547
-
-# substrates_dir = '/home/michele/python_for_md/Droplet50nmExp/Substrates'
-# substrates_dir = '/home/michele/python_for_md/FreeEnergyCorrugated'
 substrates_dir = '/home/michele/python_for_md/TestSub'
-
-# Roughness factor
 f_rough = lambda a2 : (2.0/pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))
-
-# Periodic images in y direction
 per_y = 1.0
 
-# Domain lenght
-# Lx = 1750.0                       # [Å]
-Lx = 100.0                      
-Ly = per_y*46.70                    # [Å]
-# Lz = 1000.0                       # [Å]
-Lz = 100.0
-# bf = 500.0                        # [Å]
+a = 0.7
+R0 = 250.0                          # [Å]
+lambda0 = 0.25*R0
+k0 = 2.0*np.pi/lambda0
+r0 = f_rough(a**2)
 
-# Lattice parameters for silica
+Lx = 1750.5                         # [Å]                     
+Ly = per_y*46.70                    # [Å]
+Lz = 850.0                          # [Å]
+bf = 500.0                          # [Å]
+
 sp = 4.50                           # [Å]
 alpha_1 = sqrt(3.0/4.0)
 alpha_2 = sqrt(2.0/3.0)
@@ -48,6 +36,24 @@ dy = sp*alpha_1
 dz = sp*alpha_2
 nj = int( np.round(Ly/(sp*alpha_1)) )
 nk = 1
+
+h0 = a/k0
+h_off = 5.0+h0
+w_off = 0
+bend = True
+
+box_y = nj*dy
+box_z = Lz
+
+ni = int( np.round(r0*(Lx+bf)/sp) )
+file_substrate_pdb = '/home/michele/python_for_md/SpreadingAdjust/sub_wave.pdb'
+mdc.quad_substrate_wave(h0, h_off, k0, w_off, bend, ni, nj, nk, file_substrate_pdb)
+file_uncut_gro = '/home/michele/python_for_md/SpreadingAdjust/sub_wave_uc.gro'
+os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_uncut_gro )
+file_substrate_gro = '/home/michele/python_for_md/SpreadingAdjust/sub_wave.gro'
+mdc.shift_and_resize_gro(-0.1*Ly, 0.0, 0.0, 0.1*Lx, 0.1*Ly, 0.1*Lz, file_uncut_gro, file_substrate_gro)
+
+"""
 
   ###########################################################
  ### CASE 1: fixing substrate height and change wavelenght ###
@@ -101,6 +107,8 @@ for idx in range(4) :
     print('a = '+str(np.sqrt(a2)))
     print('omega = '+str(w_n))
     print('lambda = '+str(2*np.pi/w_n))
+
+"""
 
   ###########################################################
  ### CASE 2: fixing substrate wavelenght and change height ###

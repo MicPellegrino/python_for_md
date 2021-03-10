@@ -489,7 +489,8 @@ def quad_substrate_wave (
     # Starting positions
     x0 = dx/4.0
     y0 = dy/6.0
-    z0 = 3.0
+    # z0 = 3.0
+    z0 = 0.0
 
     quad_wave_file = open(file_name, 'w')
 
@@ -724,6 +725,70 @@ def carve_2D_droplet(
 
 
 """
+    FUNCTION carve_3D_droplet
+    [...]
+"""
+def carve_3D_droplet(
+    radius,
+    input_file_name,
+    output_file_name = 'droplet.pdb'
+    ) :
+
+    cut2 = radius**2
+    cx = 0.0
+    cy = 0.0
+    cz = 0.0
+
+    # Dummy
+    n = 0
+
+    # Water molecule
+    n_atom_mol = 3
+    n_count = 0
+
+    liquid_file = open(input_file_name, 'r')
+    droplet_file = open(output_file_name, 'w+')
+
+    line_mol = []
+    for k in range(n_atom_mol) :
+        line_mol.append("")
+
+    # Dummy
+    n_count = 0
+
+    with liquid_file as f :
+        for line in f :
+            cols = line.split()
+            if cols[0] == "CRYST1":
+                cx = float(cols[1])/2.0
+                cy = float(cols[2])/2.0
+                cz = float(cols[3])/2.0
+                print("r = %f, cx = %f, cz = %f" % (sqrt(cut2), cx, cz) )
+                droplet_file.write(line)
+                break
+        for line in f :
+            cols = line.split()
+            if cols[0] == "ATOM" :
+                x = float(line[30:37])
+                y = float(line[38:45])
+                z = float(line[46:53])
+                line_mol[n_count] = line
+                if n_count == 0 :
+                    r2 = (x-cx)**2 + (y-cy)**2 + (z-cz)**2
+                else :
+                    r2 = max(r2, (x-cx)**2 + (y-cy)**2 + (z-cz)**2)
+                if n_count == (n_atom_mol-1) and r2 < cut2 :
+                    for k in range(n_atom_mol) :
+                        droplet_file.write(line_mol[k])
+                        n = n + 1
+                n_count = ( n_count + 1 ) % n_atom_mol
+        print("n atoms = %d" % n)
+
+    droplet_file.close()
+    liquid_file.close()
+
+
+"""
     [...]
 """
 def carve_rectangle(
@@ -731,7 +796,7 @@ def carve_rectangle(
     dist_z,
     input_file_name,
     output_file_name = 'shear.pdb'
-    ):
+    ) :
 
     box_x = 0.0
     box_z = 0.0
@@ -1850,3 +1915,42 @@ def density_2d_binning ( file_name, residue_name, nbin_x, nbin_z ) :
     f_in.close()
     # Define matrix with numpy for density binning and perform binning
     # Output with matplotlib
+
+def velocity_distribution_binning ( 
+    file_name_root, 
+    idx_ini, 
+    idx_fin,
+    v_max=10.0, 
+    bin_size=1.0, 
+    direct='z' ) :
+
+    nbins = int(2.0*v_max/bin_size)
+    v_bins = np.linspace(-v_max+0.5*bin_size, v_max-0.5*bin_size, nbins)
+    p_bins = np.zeros(v_bins.shape)
+
+    for k in range(idx_ini, idx_fin) :
+        
+        file_name = file_name_root+'/zoom_'+str(k).zfill(5)+'.gro'
+        n_lines = count_line(file_name)
+        
+        input_file = open(file_name, 'r')
+
+        n = 0
+        with input_file as f :
+            for line in f :
+                n += 1
+                if n>2 and n<n_lines :
+                    line_data = read_gro_line(line)
+                    if direct == 'x' :
+                        v = float(line_data[7])
+                    if direct == 'y' :
+                        v = float(line_data[8])
+                    if direct == 'z' :
+                        v = float(line_data[9])
+                    if np.abs(v) < v_max :
+                        p_bins[ int((v+v_max)/bin_size) ] += 1.0
+
+        input_file.close()
+
+    p_bins /= (bin_size*np.sum(p_bins))
+    return v_bins, p_bins

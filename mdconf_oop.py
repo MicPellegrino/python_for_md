@@ -15,7 +15,7 @@ ao2 = "O2"
 alpha_1 = np.sqrt(3.0/4.0)
 alpha_2 = np.sqrt(2.0/3.0)
 # NUmber of steps to differnciate local geometry on rough substrates
-inner_steps = 10
+inner_steps = 5
 # Effective surface as function of roughness parameter
 r_rough = lambda a2 : (2.0/np.pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))
 
@@ -239,8 +239,8 @@ class Configuration :
                 n += 1
                 y = j*dy
                 x = i*dx + (j%2)*dx_y
-                self.res_atomlist[resname].append( Atom(asl, n, x, y, z_wall, 0.0, 0.0, 0.0) )
                 self.res_atomlist[resname].append( Atom(ao1, n, x, y, z_wall+d_so, 0.0, 0.0, 0.0) )
+                self.res_atomlist[resname].append( Atom(asl, n, x, y, z_wall, 0.0, 0.0, 0.0) )
                 self.res_atomlist[resname].append( Atom(ao2, n, x, y, z_wall-d_so, 0.0, 0.0, 0.0) )
                 self.n_atoms += 3
 
@@ -252,10 +252,12 @@ class Configuration :
         z_wall, 
         amplitude, 
         wave_number, 
-        wave_offset, 
+        wave_offset,
+        mode='lenght',
+        ni=None,
         sp=0.450, 
         resname='SUB', 
-        cut_box=False
+        cut_box=False,
         ) :
 
         # Local differential geometry
@@ -265,14 +267,16 @@ class Configuration :
         scale_z = lambda : amplitude*wave_number*np.cos(wave_number*x+wave_offset)*scale_x()
         dx_so = lambda : ( d_so/norm() )
         dz_so = lambda : - ( d_so/norm() ) / (amplitude*wave_number*np.cos(wave_number*x+wave_offset))
-        
         # Calculate spacing
         dx = sp
         dy = sp*alpha_1
         dx_y = dx/2.0
-
         a2 = (amplitude*wave_number)**2
-        ni = int(r_rough(a2)*self.box_xx/dx)
+        
+        if mode == 'lenght' :
+            ni = int(r_rough(a2)*self.box_xx/dx)
+        else :
+            assert mode=='number' and not(ni==None), "Unrecognized mode or undefined number of lattice points"
         nj = int(self.box_yy/dy)
 
         if cut_box :
@@ -287,14 +291,16 @@ class Configuration :
             self.res_nomicon[resname].add(ao2)
 
         n = len(self.res_atomlist[resname])
+        x0 = 0.0
         for j in range(nj) :
-            x = (j%2)*dx_y
+            x = (j%2)*dx_y + x0
             for i in range(ni) :
                 n += 1
                 y = j*dy
                 z_pert = amplitude*np.sin( wave_number*x + wave_offset ) + z_wall
-                self.res_atomlist[resname].append( Atom(asl, n, x, y, z_pert, 0.0, 0.0, 0.0) )
+                # Order is important! O1, SI, O2
                 self.res_atomlist[resname].append( Atom(ao1, n, x+dx_so(), y, z_pert+dz_so(), 0.0, 0.0, 0.0) )
+                self.res_atomlist[resname].append( Atom(asl, n, x, y, z_pert, 0.0, 0.0, 0.0) )
                 self.res_atomlist[resname].append( Atom(ao2, n, x-dx_so(), y, z_pert-dz_so(), 0.0, 0.0, 0.0) )
                 self.n_atoms += 3
                 for ii in range(inner_steps) :
@@ -333,8 +339,8 @@ class Configuration :
                 y = j*dy
                 x = i*dx + (j%2)*dx_y
                 res = resname[mask_array[j + i*nj]]
-                self.res_atomlist[res].append( Atom(asl, n, x, y, z_wall, 0.0, 0.0, 0.0) )
                 self.res_atomlist[res].append( Atom(ao1, n, x, y, z_wall+d_so, 0.0, 0.0, 0.0) )
+                self.res_atomlist[res].append( Atom(asl, n, x, y, z_wall, 0.0, 0.0, 0.0) )
                 self.res_atomlist[res].append( Atom(ao2, n, x, y, z_wall-d_so, 0.0, 0.0, 0.0) )
                 self.n_atoms += 3
     
@@ -470,8 +476,8 @@ class Configuration :
         print("Ly = "+str(self.box_yy))
         print("Lz = "+str(self.box_zz))
         for resname in self.res_nomicon.keys() :
-            na = len(self.res_atomlist[resname])
-            print("Res: "+resname+", #atoms = "+str(na)+", atom types "+str(self.res_nomicon[resname]))
+            nm = int(len(self.res_atomlist[resname])/len(self.res_nomicon[resname]))
+            print("Res: "+resname+", #molecules = "+str(nm)+", atom types "+str(self.res_nomicon[resname]))
         print("##############")
 
 

@@ -293,7 +293,9 @@ class Configuration :
         n = len(self.res_atomlist[resname])
         x0 = 0.0
         for j in range(nj) :
-            x = (j%2)*dx_y + x0
+            x = x0
+            # !!!
+            x += (j%2)*dx_y*scale_x()
             for i in range(ni) :
                 n += 1
                 y = j*dy

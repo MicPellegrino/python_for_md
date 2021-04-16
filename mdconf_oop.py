@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy as sc
+import scipy.special
 
 # DEFINITION THAT SHOULD NOT BE CHANGED BY THE USER #
 
@@ -12,7 +14,10 @@ ao2 = "O2"
 # Hexagonal silica lattice parameters
 alpha_1 = np.sqrt(3.0/4.0)
 alpha_2 = np.sqrt(2.0/3.0)
-
+# NUmber of steps to differnciate local geometry on rough substrates
+inner_steps = 10
+# Effective surface as function of roughness parameter
+r_rough = lambda a2 : (2.0/np.pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))
 
 #####################################################
 
@@ -111,7 +116,7 @@ class Configuration :
         self.n_atoms = 0
         self.header = ""
 
-        # Dictionary containing list of atomsmper each residue
+        # Dictionary containing list of atoms per each residue
         self.res_atomlist = dict()
         # Dictionary containing the set of atoms labels for each residue
         self.res_nomicon = dict()
@@ -240,6 +245,62 @@ class Configuration :
                 self.n_atoms += 3
 
     """
+        Creates a corrigated silica monolayes at the prescribed z coordinate
+    """
+    def silica_monolayer_rough ( 
+        self, 
+        z_wall, 
+        amplitude, 
+        wave_number, 
+        wave_offset, 
+        sp=0.450, 
+        resname='SUB', 
+        cut_box=False
+        ) :
+
+        # Local differential geometry
+        x = 0.0
+        norm = lambda : np.sqrt( 1.0 + 1.0/(amplitude**2*wave_number**2*np.cos(wave_number*x+wave_offset)**2) )
+        scale_x = lambda : 1.0 / np.sqrt( 1.0 + amplitude**2*wave_number**2*np.cos(wave_number*x+wave_offset)**2 )
+        scale_z = lambda : amplitude*wave_number*np.cos(wave_number*x+wave_offset)*scale_x()
+        dx_so = lambda : ( d_so/norm() )
+        dz_so = lambda : - ( d_so/norm() ) / (amplitude*wave_number*np.cos(wave_number*x+wave_offset))
+        
+        # Calculate spacing
+        dx = sp
+        dy = sp*alpha_1
+        dx_y = dx/2.0
+
+        a2 = (amplitude*wave_number)**2
+        ni = int(r_rough(a2)*self.box_xx/dx)
+        nj = int(self.box_yy/dy)
+
+        if cut_box :
+            self.box_xx = ni*dx/r_rough(a2)
+            self.box_yy = nj*dy
+
+        if not( resname in self.res_atomlist.keys() ) :
+            self.res_atomlist[resname] = []
+            self.res_nomicon[resname] = set()
+            self.res_nomicon[resname].add(asl)
+            self.res_nomicon[resname].add(ao1)
+            self.res_nomicon[resname].add(ao2)
+
+        n = len(self.res_atomlist[resname])
+        for j in range(nj) :
+            x = (j%2)*dx_y
+            for i in range(ni) :
+                n += 1
+                y = j*dy
+                z_pert = amplitude*np.sin( wave_number*x + wave_offset ) + z_wall
+                self.res_atomlist[resname].append( Atom(asl, n, x, y, z_pert, 0.0, 0.0, 0.0) )
+                self.res_atomlist[resname].append( Atom(ao1, n, x+dx_so(), y, z_pert+dz_so(), 0.0, 0.0, 0.0) )
+                self.res_atomlist[resname].append( Atom(ao2, n, x-dx_so(), y, z_pert-dz_so(), 0.0, 0.0, 0.0) )
+                self.n_atoms += 3
+                for ii in range(inner_steps) :
+                    x = x + (1.0/inner_steps)*scale_x()*dx
+
+    """
         Creates a flat silica monolayer at the prescribed z coordinate
     """
     def silica_patches(self, z_wall, no_patches, mask_array, sp=0.450, res_pattern='WL', cut_box=False) :
@@ -317,7 +378,40 @@ class Configuration :
                 n_count = ( n_count + 1 ) % n_atom_mol
             self.n_atoms -= (len(self.res_atomlist[resname])-n)
             self.res_atomlist[resname] = new_atom_list
-    
+   
+    """
+        Carves a rectangle (to inizialize confined simulations)
+    """
+    def carve_rectangle(self, crop_x, crop_z, resname='SOL') :
+        
+        if not( resname in self.res_nomicon.keys() ) :
+            print("Specified residue not present in current configuration")
+
+        else :
+            new_atom_list = []
+            n_atom_mol = len(self.res_nomicon[resname])
+            loc_atom_list = [None] * n_atom_mol
+            n_count = 0
+            n = 0
+            for atom in self.res_atomlist[resname] :
+                x = atom.pos_x
+                y = atom.pos_y
+                z = atom.pos_z
+                loc_atom_list[n_count] = atom
+                if n_count == 0 :
+                    in_rect = (x > crop_x[0]) * ( x <= crop_x[1] ) \
+                        * (z > crop_z[0]) * ( z <= crop_z[1] )
+                else :
+                    in_rect = in_rect * (x > crop_x[0]) * ( x <= crop_x[1] ) \
+                        * (z > crop_z[0]) * ( z <= crop_z[1] )
+                if n_count == (n_atom_mol-1) and in_rect :
+                    for k in range(n_atom_mol) :
+                        new_atom_list.append(loc_atom_list[k])
+                        n = n + 1
+                n_count = ( n_count + 1 ) % n_atom_mol
+            self.n_atoms -= (len(self.res_atomlist[resname])-n)
+            self.res_atomlist[resname] = new_atom_list
+
     """
         Merges with another configuration
     """

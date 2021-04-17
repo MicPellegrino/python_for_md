@@ -234,11 +234,13 @@ class Configuration :
             self.res_nomicon[resname].add(ao2)
 
         n = len(self.res_atomlist[resname])
-        for i in range(ni) :
-            for j in range(nj) :
+        x0 = 0
+        y0 = 0.5*dy
+        for j in range(nj) :
+            for i in range(ni) :
                 n += 1
-                y = j*dy
-                x = i*dx + (j%2)*dx_y
+                y = y0 + j*dy
+                x = x0 + i*dx + (j%2)*dx_y
                 self.res_atomlist[resname].append( Atom(ao1, n, x, y, z_wall+d_so, 0.0, 0.0, 0.0) )
                 self.res_atomlist[resname].append( Atom(asl, n, x, y, z_wall, 0.0, 0.0, 0.0) )
                 self.res_atomlist[resname].append( Atom(ao2, n, x, y, z_wall-d_so, 0.0, 0.0, 0.0) )
@@ -292,13 +294,14 @@ class Configuration :
 
         n = len(self.res_atomlist[resname])
         x0 = 0.0
+        y0 = 0.5*dy
         for j in range(nj) :
             x = x0
             # !!!
             x += (j%2)*dx_y*scale_x()
             for i in range(ni) :
                 n += 1
-                y = j*dy
+                y = y0 + j*dy
                 z_pert = amplitude*np.sin( wave_number*x + wave_offset ) + z_wall
                 # Order is important! O1, SI, O2
                 self.res_atomlist[resname].append( Atom(ao1, n, x+dx_so(), y, z_pert+dz_so(), 0.0, 0.0, 0.0) )
@@ -335,11 +338,13 @@ class Configuration :
                 self.res_nomicon[resname[r]].add(ao2)
 
         n = 0
-        for i in range(ni) :
-            for j in range(nj) :
+        x0 = 0
+        y0 = 0.5*dy
+        for j in range(nj) :
+            for i in range(ni) :
                 n += 1
-                y = j*dy
-                x = i*dx + (j%2)*dx_y
+                y = y0 + j*dy
+                x = x0 + i*dx + (j%2)*dx_y
                 res = resname[mask_array[j + i*nj]]
                 self.res_atomlist[res].append( Atom(ao1, n, x, y, z_wall+d_so, 0.0, 0.0, 0.0) )
                 self.res_atomlist[res].append( Atom(asl, n, x, y, z_wall, 0.0, 0.0, 0.0) )

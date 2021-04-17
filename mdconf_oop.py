@@ -264,16 +264,16 @@ class Configuration :
 
         # Local differential geometry
         x = 0.0
-        norm = lambda : np.sqrt( 1.0 + 1.0/(amplitude**2*wave_number**2*np.cos(wave_number*x+wave_offset)**2) )
-        scale_x = lambda : 1.0 / np.sqrt( 1.0 + amplitude**2*wave_number**2*np.cos(wave_number*x+wave_offset)**2 )
-        scale_z = lambda : amplitude*wave_number*np.cos(wave_number*x+wave_offset)*scale_x()
-        dx_so = lambda : ( d_so/norm() )
-        dz_so = lambda : - ( d_so/norm() ) / (amplitude*wave_number*np.cos(wave_number*x+wave_offset))
+        a = amplitude*wave_number
+        a2 = (amplitude*wave_number)**2
+        norm = lambda x : np.sqrt( 1.0 + ( a2*(np.cos(wave_number*x+wave_offset))**2 ) )
+        scale_x = lambda x : 1.0 / np.sqrt( 1.0 + a2*(np.cos(wave_number*x+wave_offset))**2 )
+        dx_so = lambda x : - ( d_so/norm(x) ) * (a*np.cos(wave_number*x+wave_offset))
+        dz_so = lambda x : ( d_so/norm(x) )
         # Calculate spacing
         dx = sp
         dy = sp*alpha_1
         dx_y = dx/2.0
-        a2 = (amplitude*wave_number)**2
         
         if mode == 'lenght' :
             ni = int(r_rough(a2)*self.box_xx/dx)
@@ -298,18 +298,18 @@ class Configuration :
         for j in range(nj) :
             x = x0
             # !!!
-            x += (j%2)*dx_y*scale_x()
+            x += (j%2)*dx_y*scale_x(x)
             for i in range(ni) :
                 n += 1
                 y = y0 + j*dy
                 z_pert = amplitude*np.sin( wave_number*x + wave_offset ) + z_wall
-                # Order is important! O1, SI, O2
-                self.res_atomlist[resname].append( Atom(ao1, n, x+dx_so(), y, z_pert+dz_so(), 0.0, 0.0, 0.0) )
+                # Order is important! O1, SI, O2 
+                self.res_atomlist[resname].append( Atom(ao1, n, x+dx_so(x), y, z_pert+dz_so(x), 0.0, 0.0, 0.0) )
                 self.res_atomlist[resname].append( Atom(asl, n, x, y, z_pert, 0.0, 0.0, 0.0) )
-                self.res_atomlist[resname].append( Atom(ao2, n, x-dx_so(), y, z_pert-dz_so(), 0.0, 0.0, 0.0) )
+                self.res_atomlist[resname].append( Atom(ao2, n, x-dx_so(x), y, z_pert-dz_so(x), 0.0, 0.0, 0.0) )
                 self.n_atoms += 3
                 for ii in range(inner_steps) :
-                    x = x + (1.0/inner_steps)*scale_x()*dx
+                    x = x + (1.0/inner_steps)*scale_x(x)*dx
 
     """
         Creates a flat silica monolayer at the prescribed z coordinate

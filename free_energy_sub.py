@@ -1,133 +1,53 @@
-### PYTHON FOR MD ###
-"""
-    Creates the substrate configurations for free-energy calculations
-"""
-
+import mdconf_oop as md
 import os
-import mdconf as mdc
 import numpy as np
-from math import ceil
-from math import sqrt
-from math import pi
-import scipy as sc
-import scipy.special
 
-# GROMACS version
-<<<<<<< HEAD
-gmx = 'gmx'
-=======
-gmx = 'gmx20'
->>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
+"""
+    Scrip to produce several pos-res configurations of corrugate substrate
+"""
 
-substrates_dir = '/home/michele/python_for_md/TestSub'
+working_folder = '/home/michele/python_for_md/FreeEnergyCorrugate'
+file_name_flat_res = working_folder+'/flat_res.gro'
+file_name_flat_sol = working_folder+'/flat_sol.gro'
+file_name_flat_init = working_folder+'/flat_init.gro'
 
-# Roughness factor
-f_rough = lambda a2 : (2.0/pi) * np.sqrt(a2+1.0) * sc.special.ellipe(a2/(a2+1.0))
+# Nominal lenght along x
+Lx_nominal = 20.0
+# Nominal lenght along z
+Lz_nominal = 10.0
 
-# Domain lenght
-<<<<<<< HEAD
-Lx = 250.0              # [Å]
-Ly = 46.70              # [Å]
-Lz = 100.0              # [Å]
-=======
-Lx = 750.000            # [Å]
-# Ly = 46.70            # [Å]
-Ly = 23.3830            # [Å]
-Lz = 100.724            # [Å]
->>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
+conf_flat = md.Configuration(Lx=Lx_nominal, Ly=2.33827, Lz=Lz_nominal)
 
-# Lattice parameters for silica
-sp = 4.50               # [Å]
-alpha_1 = sqrt(3.0/4.0)
-alpha_2 = sqrt(2.0/3.0)
-dy = sp*alpha_1
-dz = sp*alpha_2
-ni = int( np.round(Lx/sp) )
-nj = int( np.round(Ly/(sp*alpha_1)) )
-nk = 1
+zw = 5.0
+conf_flat.silica_monolayer(zw, cut_box=True)
+conf_flat.output(file_name_flat_res)
 
-h = 10.0                            # [Å]
-h_off = 3*h                         # [Å]
-w_off = 0.0                         # [Å^-1]
+n_quad_x = int( conf_flat.box_xx/0.450 )
 
-file_substrate_pdb = substrates_dir+'/sub_flat.pdb'
-<<<<<<< HEAD
-file_substrate_gro = substrates_dir+'/sub_flat.gro'
-mdc.quad_substrate_wave(0.0, h_off, 0.0, w_off, False, ni, nj, nk, file_substrate_pdb)
-os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_substrate_gro)
+# Fix wave number
+k = 2*np.pi/(conf_flat.box_xx/4)
+a_vec = np.linspace(0.1, 1.5, 15)
+h_vec = a_vec/k
+labels = np.linspace(0, len(h_vec)-1, len(h_vec)).astype(int)
+conf_rough_vec = []
 
-bend = True
+area_const = conf_flat.box_xx * conf_flat.box_zz
 
-=======
-# mdc.quad_substrate(ni, nj, nk, file_substrate_pdb)
-mdc.quad_substrate_wave(0.0, h_off, 0.0, w_off, False, ni, nj, nk, file_substrate_pdb)
+for l in range(len(labels)) :
+    conf_rough_vec.append(md.Configuration(Lx=Lx_nominal, Ly=2.33827, Lz=Lz_nominal))
+    conf_rough_vec[l].silica_monolayer_rough(zw, h_vec[l], k, 0.5*np.pi, mode='number', ni=n_quad_x, cut_box=True)
+    Lzk = area_const / conf_rough_vec[l].box_xx
+    conf_rough_vec[l].box_zz = Lzk
+    conf_rough_vec[l].shift(0.0, 0.0, 0.5*(Lzk-Lz_nominal), 'SUB')
+    conf_rough_vec[l].output(working_folder+'/a'+str(labels[l]).zfill(2)+'_res.gro')
 
-bend = True
+# Solvate
+os.system('gmx solvate -cp '+file_name_flat_res+' -cs wat_equil.gro -scale 0.6 -o '+file_name_flat_sol)
 
-max_box_y = nj*dy/10
-max_box_x = ni*sp/10 + max_box_y
-max_box_z = 0.0
+# Resize
+conf_init = md.Configuration()
+conf_init.input(file_name_flat_sol)
+conf_init.carve_rectangle([0.0, conf_flat.box_xx], [2.5, 7.5])
+conf_init.output(file_name_flat_init)
 
->>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
-# Rough
-for idx in range(4) :
-    w_n = (0.5+idx*0.5)*(1.0/h)   # [Å^-1]
-    a2 = (w_n*h)**2
-    r0 = f_rough(a2)
-    file_substrate_pdb = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.pdb'
-<<<<<<< HEAD
-    file_substrate_gro = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.gro'
-    mdc.quad_substrate_wave(h, h_off, w_n, w_off, bend, ni, nj, nk, file_substrate_pdb)
-    os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_substrate_gro )
-=======
-    # file_substrate_gro = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.gro'
-    mdc.quad_substrate_wave(h, h_off, w_n, w_off, bend, ni, nj, nk, file_substrate_pdb)
-    # os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_substrate_gro )
-    max_box_z = max( max_box_z, (nk*dz+3.0+h_off+h)/10 )
->>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
-
-# Probing a = 0.25 and a = 0.50
-lambda_star = 35.0              # [Å]
-w_0 = 2.0*np.pi/lambda_star     # [Å^-1]
-
-# Flat substrate has already been produced
-<<<<<<< HEAD
-=======
-
->>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
-# Rough
-for idx in range(4) :
-    a = (0.5+idx*0.5)    # [nondim.]
-    h_var = a/w_0
-    r0 = f_rough(a**2)
-    # ni = int( np.round(r0*(Lx+bf)/sp) )
-    file_substrate_pdb = substrates_dir+'/sub_height'+str(int(idx+1))+'.pdb'
-<<<<<<< HEAD
-    file_substrate_gro = substrates_dir+'/sub_height'+str(int(idx+1))+'.gro'
-    mdc.quad_substrate_wave(h_var, h_off, w_0, w_off, bend, ni, nj, nk, file_substrate_pdb)
-    os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_substrate_gro )
-=======
-    # file_substrate_gro = substrates_dir+'/sub_height'+str(int(idx+1))+'.gro'
-    mdc.quad_substrate_wave(h_var, h_off, w_0, w_off, bend, ni, nj, nk, file_substrate_pdb)
-    # os.system( gmx+" editconf -f " + file_substrate_pdb + " -o " + file_substrate_gro )
-    max_box_z = max( max_box_z, (nk*dz+3.0+h_off+h)/10 )
-
-# Producing the .gro files
-
-# Flat
-file_substrate_pdb = substrates_dir+'/sub_flat.pdb'
-file_substrate_gro = substrates_dir+'/sub_flat.gro'
-os.system( gmx+" editconf -c -f " + file_substrate_pdb + " -o " + file_substrate_gro + " -box " + str(max_box_x) + " " + str(max_box_y) + " " + str(max_box_z) )
-
-# Lambda
-for idx in range(4) :
-    file_substrate_pdb = substrates_dir+'/sub_height'+str(int(idx+1))+'.pdb'
-    file_substrate_gro = substrates_dir+'/sub_height'+str(int(idx+1))+'.gro'
-    os.system( gmx+" editconf -c -f " + file_substrate_pdb + " -o " + file_substrate_gro + " -box " + str(max_box_x) + " " + str(max_box_y) + " " + str(max_box_z) )
-
-# Height
-for idx in range(4) :
-    file_substrate_pdb = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.pdb'
-    file_substrate_gro = substrates_dir+'/sub_lambda'+str(int(idx+1))+'.gro'
-    os.system( gmx+" editconf -c -f " + file_substrate_pdb + " -o " + file_substrate_gro + " -box " + str(max_box_x) + " " + str(max_box_y) + " " + str(max_box_z) )
->>>>>>> 569e7de7324a4fa570dd3140ab44c5d11bf41660
+conf_init.print_info()

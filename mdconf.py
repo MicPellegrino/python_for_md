@@ -1684,7 +1684,8 @@ def crop_xyz (
     x0, y0, z0,
     x1, y1, z1,
     input_file,
-    output_file = 'crop.gro'
+    output_file = 'crop.gro',
+    restype = 'System'
     ) :
     
     assert x1-x0>0 and y1-y0>0 and z1-z0>0, "Input error: negative box length"
@@ -1706,20 +1707,36 @@ def crop_xyz (
             if mol_count == 0 :
                 ins = True
             line_data = read_gro_line( line )
-            inx = ( line_data[4] > x0 and line_data[4] <= x1 )
-            iny = ( line_data[5] > y0 and line_data[5] <= y1 )
-            inz = ( line_data[6] > z0 and line_data[6] <= z1 )
-            ins = inx and iny and inz and ins
-            mol_line[mol_count] = "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" % ( line_data[0],
-                line_data[1], line_data[2], line_data[3], 
-                line_data[4]-x0, line_data[5]-y0, line_data[6]-z0,
-                line_data[7], line_data[8], line_data[9] )
-            if ( mol_count == 2 and ins ) :
-                n_atoms += n_atoms_mol
-                f_out.write( mol_line[0] )
-                f_out.write( mol_line[1] )
-                f_out.write( mol_line[2] )
-            mol_count = (mol_count+1)%n_atoms_mol
+            if restype == 'System' :
+                inx = ( line_data[4] > x0 and line_data[4] <= x1 )
+                iny = ( line_data[5] > y0 and line_data[5] <= y1 )
+                inz = ( line_data[6] > z0 and line_data[6] <= z1 )
+                ins = inx and iny and inz and ins
+                mol_line[mol_count] = "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" % ( line_data[0],
+                    line_data[1], line_data[2], line_data[3], 
+                    line_data[4]-x0, line_data[5]-y0, line_data[6]-z0,
+                    line_data[7], line_data[8], line_data[9] )
+                if ( mol_count == 2 and ins ) :
+                    n_atoms += n_atoms_mol
+                    f_out.write( mol_line[0] )
+                    f_out.write( mol_line[1] )
+                    f_out.write( mol_line[2] )
+                mol_count = (mol_count+1)%n_atoms_mol
+            elif line_data[1] == restype :
+                inx = ( line_data[4] > x0 and line_data[4] <= x1 )
+                iny = ( line_data[5] > y0 and line_data[5] <= y1 )
+                inz = ( line_data[6] > z0 and line_data[6] <= z1 )
+                ins = inx and iny and inz and ins
+                mol_line[mol_count] = "%5d%-5s%5s%5d%8.3f%8.3f%8.3f%8.4f%8.4f%8.4f\n" % ( line_data[0],
+                    line_data[1], line_data[2], line_data[3], 
+                    line_data[4]-x0, line_data[5]-y0, line_data[6]-z0,
+                    line_data[7], line_data[8], line_data[9] )
+                if ( mol_count == 2 and ins ) :
+                    n_atoms += n_atoms_mol
+                    f_out.write( mol_line[0] )
+                    f_out.write( mol_line[1] )
+                    f_out.write( mol_line[2] )
+                mol_count = (mol_count+1)%n_atoms_mol
         elif idx == n_lines :
             f_out.write("%10.5f%10.5f%10.5f\n" % ( x1-x0, y1-y0, z1-z0 ) )
         elif idx == 1 :
@@ -1892,6 +1909,7 @@ POSTPROCESSING AND ANALYSIS
 
 # Dictionary for atomic mass (non-dimensional?)
 
+"""
 def density_2d_binning ( file_name, residue_name, nbin_x, nbin_z ) :
     assert file_name.split('.')[-1] == 'gro', "Invalid file format"
     f_in = open(file_name, 'r')
@@ -1915,6 +1933,50 @@ def density_2d_binning ( file_name, residue_name, nbin_x, nbin_z ) :
     f_in.close()
     # Define matrix with numpy for density binning and perform binning
     # Output with matplotlib
+"""
+def water_cl_binning ( file_name, nx, ny, Lx, Ly, Lz ) :
+
+    assert file_name.split('.')[-1] == 'gro', "Invalid file format"
+    
+    # Mass in AMU
+    mo = 15.9994
+    mh = 1.007826
+    mass = dict()
+    mass['OW'] = mo
+    mass['HW1'] = mh
+    mass['HW2'] = mh
+    
+    bin_volume = Lx*Ly*Lz
+
+    # k = i + j*nx
+    dens_array = np.zeros( nx*ny )
+    
+    n_lines = count_line( file_name )
+
+    input_file = open(file_name, 'r')
+
+    n = 0
+    with input_file as f :
+        for line in f :
+            n += 1
+            if n>2 and n<n_lines :
+                line_data = read_gro_line(line)
+                i = int(nx*line_data[4]/Lx)
+                j = int(ny*line_data[5]/Ly)
+                k = int(i + j * nx)
+                dens_array[k] += mass[line_data[2]]
+
+    input_file.close()
+
+    dens_array /= bin_volume
+
+    # TEST
+    density_2d = np.reshape(dens_array, (ny, nx))
+    plt.pcolormesh(density_2d)
+    plt.axis('equal')
+    plt.show()
+
+    return dens_array
 
 def velocity_distribution_binning ( 
     file_name_root, 

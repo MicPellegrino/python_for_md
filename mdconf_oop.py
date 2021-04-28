@@ -224,6 +224,8 @@ class Configuration :
 
         if cut_box :
             self.box_xx = ni*dx
+            # Make sure that when cutting long y the number of layes is even (to avoid period images inconst.)
+            nj += (nj%2)
             self.box_yy = nj*dy
         
         if not( resname in self.res_atomlist.keys() ) :
@@ -247,7 +249,7 @@ class Configuration :
                 self.n_atoms += 3
 
     """
-        Creates a corrigated silica monolayes at the prescribed z coordinate
+        Creates a corrugated silica monolayes at the prescribed z coordinate
     """
     def silica_monolayer_rough ( 
         self, 
@@ -283,6 +285,8 @@ class Configuration :
 
         if cut_box :
             self.box_xx = ni*dx/r_rough(a2)
+            # Make sure that when cutting long y the number of layes is even (to avoid period images inconst.)
+            nj += (nj%2)
             self.box_yy = nj*dy
 
         if not( resname in self.res_atomlist.keys() ) :
@@ -325,6 +329,8 @@ class Configuration :
 
         if cut_box :
             self.box_xx = ni*dx
+            # Make sure that when cutting long y the number of layes is even (to avoid period images inconst.)
+            nj += (nj%2)
             self.box_yy = nj*dy
         
         resname = []

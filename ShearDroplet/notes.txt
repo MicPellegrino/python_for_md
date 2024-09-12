@@ -1,7 +1,0 @@
-The shifted substrate (lambda1) corresponds to:
-
-delta_lambda = 1.33332e-05
-for Ca=0.1 (i.e. v_lay = 3333.33 nm/ps)
-
-delta_lambda = 4.00000e-05
-for Ca=0.3 (i.e. v_lay = 10000.00 nm/ps)

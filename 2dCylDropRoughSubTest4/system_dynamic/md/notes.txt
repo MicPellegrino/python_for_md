@@ -1,2 +1,0 @@
-18-01-2020:	Check md0, apparently the shift has produced a bad contact (perform sd again, if necessary)
-21-01-2020:	By default, center of mass removal is set to 'Linear!' CHANGE IT!

@@ -19,7 +19,7 @@ gamma = 5.78e-2         # Pa*m
 N_A = 6.02214076e23     # mol^-1
 
 label = ['00', '01', '02', '03', '04', '05', '06']
-a = np.linspace(0.1, 0.7, 7)
+a = np.linspace(0.0, 0.7, 8)
 
 xvg_res = []
 xvg_sol = []
@@ -39,6 +39,9 @@ Ly = (conf_init.box_yy)*1e-9
 Lx0 = (conf_init.box_xx)*1e-9
 Lx1 = (conf_fin.box_xx)*1e-9
 diff_H_sur = [ (2.0*N_A*gamma*Ly*(Lx1-Lx0))*1e-3, ]
+
+theta_0 = 37.8
+delta_F_wet_dry = -2.0*N_A*gamma*np.cos(np.deg2rad(theta_0))*Ly*Lx0*1e-3
 
 k_example = 4
 
@@ -63,10 +66,10 @@ for k in range(len(label)) :
     if k == k_example :
         ax1.plot(t, dhdl_avg, 'g-', linewidth=0.25)
         ax1.plot(t, np.zeros(len(t)), 'k--', linewidth=2.5)
-        ax1.plot(t, delta_h, 'r-', linewidth=2.5, label='integral')
+        ax1.plot(t, delta_h, 'r-', linewidth=2.5, label=r'integral over $d\lambda$')
         ax1.set_title('Dry', fontsize=35.0)
-        ax1.set_xlabel('$t$', fontsize=25.0)
-        ax1.set_ylabel(r'$<dH/d\lambda>$', fontsize=25.0)
+        ax1.set_xlabel('$t$ [ps]', fontsize=25.0)
+        ax1.set_ylabel(r'$<dH/d\lambda>$ [kJ/mol]', fontsize=25.0)
         ax1.legend(fontsize=25.0)
         ax1.tick_params(axis='x', labelsize=20.0)
         ax1.tick_params(axis='y', labelsize=20.0)
@@ -83,7 +86,7 @@ for k in range(len(label)) :
         ax2.plot(t, np.zeros(len(t)), 'k--', linewidth=2.5)
         ax2.plot(t, delta_h, 'r-', linewidth=2.5)
         ax2.set_title('Wet', fontsize=35.0)
-        ax2.set_xlabel('$t$', fontsize=25.0)
+        ax2.set_xlabel('$t$ [ps]', fontsize=25.0)
         ax2.tick_params(axis='x', labelsize=20.0)
         ax2.tick_params(axis='y', labelsize=20.0)
         y_min = min( y_min, min(dhdl_avg))
@@ -95,21 +98,26 @@ for k in range(len(label)) :
 
 plt.show()
 
+diff_H_sol.insert(0, 0.0)
+diff_H_res.insert(0, 0.0)
+diff_H_sur.insert(0, 0.0)
+
 diff_H_sol = np.array(diff_H_sol)
 diff_H_res = np.array(diff_H_res)
 diff_H_sur = np.array(diff_H_sur)
 
 diff_H_ws = diff_H_sol - diff_H_res - diff_H_sur
 
-plt.plot(a, diff_H_sol, 'ko--', linewidth=1.5, markersize=8.0, label='total')
-plt.plot(a, diff_H_res, 'gs--', linewidth=1.5, markersize=8.0, label='restraints')
-plt.plot(a, diff_H_sur, 'bx--', linewidth=1.5, markersize=8.0, label='surface')
-plt.plot(a, diff_H_ws,  'rd--', linewidth=2.5, markersize=12.0, label='excess')
+plt.plot(a, diff_H_sol, 'ko-.', linewidth=1.5, markersize=10.0, label='total')
+plt.plot(a, diff_H_res, 'gs-.', linewidth=1.5, markersize=10.0, label='pos. res.')
+plt.plot(a, diff_H_sur, 'bx-.', linewidth=1.5, markersize=10.0, label='liquid/vapour')
+plt.plot(a, diff_H_ws,  'rD-.', linewidth=3.0, markersize=15.0, label='excess')
+plt.plot([0.0, 0.75], [delta_F_wet_dry, delta_F_wet_dry], 'm--', linewidth=3.0, label=r'$\delta$ wet-dry')
 plt.title('Free energy analysis', fontsize=35.0)
 plt.legend(fontsize=25.0)
-plt.xlim(0.0, 0.8)
+plt.xlim(0.0, 0.75)
 plt.xticks(fontsize=20.0)
 plt.yticks(fontsize=20.0)
-plt.ylabel('$H$', fontsize=25.0)
-plt.xlabel('$a$', fontsize=25.0)
+plt.ylabel('$\Delta F$ [kJ/mol]', fontsize=25.0)
+plt.xlabel('$a=hk$ [-1]', fontsize=25.0)
 plt.show()

@@ -1,7 +1,7 @@
 import numpy as np
 import mdconf as md
 
-file_name = 'conf_q5_walls.gro'
+file_name = '/home/michele/python_for_md/ShearValidation/restraints_lambda0_nosol.gro'
 
 N = md.count_line(file_name)
 

@@ -1,9 +1,0 @@
-"""
-Highest SIMD level requested by all nodes in run: AVX2_256
-SIMD instructions selected at compile time:       AVX2_128
-Compiled SIMD newer than requested; program might crash.
-Reading file system.tpr, VERSION 2019.4 (single precision)
-"""
-
-Could it be the reason? It still seems strange it would crash without issuing any error message.
-Try to rebuild GROMACS 2020 with the AVX2_256 option for SIMD!

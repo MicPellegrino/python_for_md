@@ -1,8 +1,0 @@
-TO DO LIST:
-
-1) merge the equilibrated substrate with the R50 droplet
-
-2) upload on Beskow
-
-3) Cross-fingers steepest descent works this time...
-

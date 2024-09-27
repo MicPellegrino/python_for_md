@@ -1,0 +1,7 @@
+[ moleculetype ]
+; molname nrexcl
+SUB 0
+
+[ atoms ]
+;   nr   type  resnr residue  atom   cgnr     charge       mass
+     1    CUB      1     SUB   CUB      1

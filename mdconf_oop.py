@@ -467,10 +467,13 @@ class Configuration :
     """
         Creates a flat LJ wall of nk layers
     """
-    def lj_wall(self, z_wall, nk=3, sp=0.27, resname='SUB', cut_box=False) :
-
+    def lj_wall(self, z_wall, nk=3, sp=0.27, sp_y=None, resname='SUB', cut_box=False) :
+        
         dx = sp
-        dy = sp*alpha_1
+        if sp_y == None :
+            dy = sp*alpha_1
+        else :
+            dy = sp_y
         dz = sp*alpha_2
 
         ni = int(self.box_xx/dx)
